@@ -10,55 +10,52 @@
 %define		_disable_libtoolize		1
 
 #-----------------------------------------------------------------------
-%define		cross			arm
-%define 	target			%{cross}-linux
-%define 	binutils_version	2.21.51.0.6
-%define 	gcc_version		4.6.0
-%define 	kernel_version		2.6.38.1
-%define 	glibc_version		2.13
-%define 	sysroot			%{_builddir}/cross-%{target}-1.0/sysroot
-%define		prefix			%{_prefix}/%{target}
+%define		target		arm-none-linux-gnueabi
+%define		full_version	2010.09-50
+%define		prefix		%{_prefix}/%{target}
+%define 	sysroot		%{_builddir}/arm-%{full_version}-%{target}/sysroot
+%define		gccdir		%{_libdir}/gcc/%{target}/4.5.1
 
-Name:		cross-%{target}
-Version:	1.0
+Name:		cross-arm
 Release:	1
+Version:	2010.09
 License:	GPLv3+
 Group:		Development/Other
-Summary:	Cross platform utilities for %{target}
-URL:            http://www.gnu.org/software
-Source0:	http://ftp.kernel.org/pub/linux/devel/binutils/binutils-%{binutils_version}.tar.bz2
-# from linux-userspace-headers package
-Source1:	kernel-headers-%{kernel_version}.tar.xz
-Source2:	ftp://gcc.gnu.org/pub/gcc/releases/gcc-%{gcc_version}/gcc-core-%{gcc_version}.tar.bz2
-Source3:	ftp://gcc.gnu.org/pub/gcc/releases/gcc-%{gcc_version}/gcc-g++-%{gcc_version}.tar.bz2
-Source4:	ftp://ftp.gnu.org/gnu/glibc/glibc-%{glibc_version}.tar.xz
-Source5:	ftp://ftp.gnu.org/gnu/glibc/glibc-ports-%{glibc_version}.tar.bz2
+Summary:	Sourcery G++ Lite for ARM GNU/Linux
+# 841081740c155016364bcd979b5c06e9
+Source0:	http://www.codesourcery.com/sgpp/lite/arm/portal/package7850/public/arm-none-linux-gnueabi/arm-2010.09-50-arm-none-linux-gnueabi.src.tar.bz2
+Source1:	http://www.codesourcery.com/sgpp/lite/arm/portal/doc9947/getting-started.pdf
 Buildroot:	%{_tmppath}/%{name}-%{version}-root
 
 BuildRequires:	autoconf
 BuildRequires:	automake
+BuildRequires:	binutils-devel
 BuildRequires:	bison
+BuildRequires:	elfutils-devel
 BuildRequires:	flex
 BuildRequires:	gcc
+BuildRequires:	gmp-devel
+BuildRequires:	mpfr-devel
+BuildRequires:	libmpc-devel
 BuildRequires:	gettext
 BuildRequires:	texinfo
+BuildRequires:	texlive
+
+Patch0:		cross-arm-glibc.patch
 
 %description
-Cross platform utilities for %{target}.
+Sourcery G++ Lite for ARM GNU/Linux is intended for developers working on
+embedded GNU/Linux applications. It may also be used for Linux kernel
+development and debugging, or to build a GNU/Linux distribution.
 
 #-----------------------------------------------------------------------
-%package	-n cross-%{cross}-binutils
-License:	GPLv3+
-Summary:        Cross Compiling GNU binutils targeted at %{target}
-Group:		Development/Other
-Version:	%{binutils_version}
+%package	binutils
+Summary:	binutils Sourcery G++ Lite for ARM GNU/Linux
 
-%description	-n cross-%{cross}-binutils
-This is a Cross Compiling version of GNU binutils, which can be used to
-assemble and link binaries for the %{target} platform, instead of for the
-native %{_arch} platform.
+%description	binutils
+binutils Sourcery G++ Lite for ARM GNU/Linux.
 
-%files		-n cross-%{cross}-binutils
+%files		binutils
 %defattr(-,root,root,-)
 %{_bindir}/%{target}-addr2line
 %{_bindir}/%{target}-ar
@@ -67,7 +64,6 @@ native %{_arch} platform.
 %{_bindir}/%{target}-elfedit
 %{_bindir}/%{target}-gprof
 %{_bindir}/%{target}-ld
-%{_bindir}/%{target}-ld.bfd
 %{_bindir}/%{target}-nm
 %{_bindir}/%{target}-objcopy
 %{_bindir}/%{target}-objdump
@@ -94,7 +90,6 @@ native %{_arch} platform.
 %{prefix}/bin/ar
 %{prefix}/bin/as
 %{prefix}/bin/ld
-%{prefix}/bin/ld.bfd
 %{prefix}/bin/nm
 %{prefix}/bin/objcopy
 %{prefix}/bin/objdump
@@ -103,191 +98,193 @@ native %{_arch} platform.
 %{prefix}/lib/ldscripts
 
 #-----------------------------------------------------------------------
-%package	-n cross-%{cross}-glibc
-License:	GPLv3+
-Summary:        Cross Compiled GNU C Library targeted at %{target}
-Group:		Development/Other
-Version:	%{glibc_version}
+%package	gcc
+Summary:	gcc Sourcery G++ Lite for ARM GNU/Linux
 
-%description	-n cross-%{cross}-glibc
-This is a Cross Compiled version of the GNU C Library, which can be used to
-compile and link binaries for the %{target} platform, instead of for the
-native %{_arch} platform.
+%description	gcc
+gcc Sourcery G++ Lite for ARM GNU/Linux.
 
-%files		-n cross-%{cross}-glibc
+%files		gcc
 %defattr(-,root,root,-)
+%{_bindir}/%{target}-cpp
+%{_bindir}/%{target}-gcc
+%{_bindir}/%{target}-gcc-4.5.1
+%{_bindir}/%{target}-gccbug
+%{_bindir}/%{target}-gcov
+%{gccdir}/armv4t/crtbegin.o
+%{gccdir}/armv4t/crtbeginS.o
+%{gccdir}/armv4t/crtbeginT.o
+%{gccdir}/armv4t/crtend.o
+%{gccdir}/armv4t/crtendS.o
+%{gccdir}/armv4t/libgcc.a
+%{gccdir}/armv4t/libgcov.a
+%{gccdir}/cc1
+%{gccdir}/collect2
+%{gccdir}/crtbegin.o
+%{gccdir}/crtbeginS.o
+%{gccdir}/crtbeginT.o
+%{gccdir}/crtend.o
+%{gccdir}/crtendS.o
+%{gccdir}/include/arm_neon.h
+%{gccdir}/include/float.h
+%{gccdir}/include/iso646.h
+%{gccdir}/include/limits.h
+%{gccdir}/include/mmintrin.h
+%{gccdir}/include/stdarg.h
+%{gccdir}/include/stdbool.h
+%{gccdir}/include/stddef.h
+%{gccdir}/include/stdfix.h
+%{gccdir}/include/stdint-gcc.h
+%{gccdir}/include/stdint.h
+%{gccdir}/include/syslimits.h
+%{gccdir}/include/unwind.h
+%{gccdir}/include/varargs.h
+%{gccdir}/libgcc.a
+%{gccdir}/libgcov.a
+%{gccdir}/lto1
+%{gccdir}/thumb2/crtbegin.o
+%{gccdir}/thumb2/crtbeginS.o
+%{gccdir}/thumb2/crtbeginT.o
+%{gccdir}/thumb2/crtend.o
+%{gccdir}/thumb2/crtendS.o
+%{gccdir}/thumb2/libgcc.a
+%{gccdir}/thumb2/libgcov.a
+%{prefix}/bin/gcc
+
+#-----------------------------------------------------------------------
+%package	glibc
+Summary:	glibc Sourcery G++ Lite for ARM GNU/Linux
+
+%description	glibc
+glibc Sourcery G++ Lite for ARM GNU/Linux.
+
+%files		glibc
+%defattr(-,root,root,-)
+%{prefix}/include
+%{prefix}/lib
 
 #-----------------------------------------------------------------------
 %prep
-%setup -q -c -a1 -a2 -a3 -a4 -a5
+%setup -q -n arm-%{full_version}-%{target}
+tar jxf binutils-%{full_version}.tar.bz2
+mkdir -p binutils-%{version}/build
+tar jxf linux-%{full_version}.tar.bz2
+tar jxf glibc-%{full_version}.tar.bz2
+mkdir -p glibc-2.11-%{version}/build
+tar jxf glibc_ports-%{full_version}.tar.bz2
+mkdir -p glibc-2.11-%{version}/ports
+cp -far glibc-ports-2.11-%{version}/* glibc-2.11-%{version}/ports
+tar jxf gcc-%{full_version}.tar.bz2
+mkdir -p gcc-4.5-%{version}/build
+
+%patch0 -p1
 
 #-----------------------------------------------------------------------
 %build
-OPT_FLAGS=`echo %{optflags} |					\
-	sed	-e 's/\(-Wp,\)\?-D_FORTIFY_SOURCE=[12]//g'	\
-		-e 's/-m\(31\|32\|64\)//g'			\
-		-e 's/-fstack-protector//g'			\
-		-e 's/--param=ssp-buffer-size=4//'		\
-		-e 's/-pipe//g'`
-OPT_FLAGS=`echo "$OPT_FLAGS" | sed -e 's/[[:blank:]]\+/ /g'`
-
+export PATH=%{sysroot}%{_bindir}:$PATH
 mkdir -p %{sysroot}%{prefix}/include
+mkdir -p %{sysroot}%{prefix}/lib
 
-mkdir -p binutils-%{binutils_version}/build
-pushd binutils-%{binutils_version}/build
-    CFLAGS="$OPT_FLAGS" 					\
-    CXXFLAGS="$OPT_FLAGS"					\
-    CONFIGURE_TOP=..
+pushd binutils-%{version}/build
+    CONFIGURE_TOP=..						\
     %configure2_5x						\
 	--disable-nls						\
 	--disable-werror					\
 	--target=%{target}
     %make
-    make install DESTDIR=%{sysroot}
+    DESTDIR=%{sysroot} make installdirs install-host install-target
+    rm -fr %{sysroot}%{_infodir}
+    rm -fr %{sysroot}%{_libdir}/libiberty.a
+    rm -f %{sysroot}%{_mandir}/man1/%{target}-{dlltool,nlmconv,windmc,windres}.1*
 popd
 
-# headers to bootstrap gcc
-pushd kernel-headers-%{kernel_version}
-    TARGET=%{cross} ./create_asm_headers.sh
-    ./make_versionh.sh
-    rm -fr drm
-    rm -f create_asm_headers.sh make_versionh.sh
+pushd linux-%{version}
+    make ARCH=arm INSTALL_HDR_PATH=%{sysroot}%{prefix} headers_install
 popd
-mv -f kernel-headers-%{kernel_version}/* %{sysroot}%{prefix}/include
 
-cp -far glibc-ports-%{glibc_version}/* glibc-%{glibc_version}
-
-mkdir -p glibc-%{glibc_version}/build
-pushd glibc-%{glibc_version}/build
+rm -fr glibc-2.11-%{version}/build/*
+pushd glibc-2.11-%{version}/build
     ../configure						\
 	--prefix=%{sysroot}%{prefix}				\
+	--disable-nls						\
+	--disable-profile					\
+	--disable-shared					\
+	--enable-kernel=2.6.16					\
+	--without-gd						\
 	--with-headers=%{sysroot}%{prefix}/include		\
-	--without-fp						\
-	--without-selinux					\
 	--target=%{target}
-    # workaround "consistency check"
-    ln -sf %{sysroot}%{prefix}/include %{sysroot}%{_includedir}
-    # ignore error rebuilding rpcgen
-    make -k install-headers || :
-    # missing gnu/stubs.h required by libgcc
-    cp -far ../include/gnu %{sysroot}%{prefix}/include
-    # missing stdio_lim.h required by libgcc
-    cp -far bits/stdio_lim.h %{sysroot}%{prefix}/include/bits
+    make install-bootstrap-headers=yes				\
+	 install-headers
 popd
 
-# "bootstrap" gcc
-mkdir -p gcc-%{gcc_version}/build
-pushd gcc-%{gcc_version}/build
-    CC=%{__cc}							\
-    CFLAGS="$OPT_FLAGS" 					\
-    CXXFLAGS="$OPT_FLAGS"					\
+rm -fr gcc-4.5-%{version}/build/*
+pushd gcc-4.5-%{version}/build
     ../configure						\
 	--prefix=%{sysroot}%{_prefix}				\
-	--libdir=%{sysroot}%{_prefix}/lib			\
-	--libexecdir=%{sysroot}%{_prefix}/lib			\
-	--disable-libgcj					\
+	--libdir=%{sysroot}%{_libdir}				\
+	--libexecdir=%{sysroot}%{_libdir}			\
+	--disable-nls						\
+	--disable-decimal-float					\
+	--disable-shared					\
+	--disable-threads					\
 	--disable-libffi					\
+	--disable-libgcj					\
 	--disable-libgomp					\
-	--disable-libquadmath					\
-	--disable-libquadmath-support				\
 	--disable-libmudflap					\
 	--disable-libssp					\
-	--enable-long-long					\
-	--disable-werror					\
+	--disable-libstdcxx-pch					\
+	--disable-libunwind-exceptions				\
 	--enable-__cxa_atexit					\
-	--disable-bootstrap					\
-	--enable-checking=release				\
-	--enable-gnu-unique-object				\
+	--enable-extra-sgxxlite-multilibs			\
 	--enable-languages="c"					\
-	--enable-linker-build-id				\
-	--disable-plugin					\
-	--enable-threads=posix					\
-	--with-system-zlib					\
-	--with-bugurl=https://qa.mandriva.com/			\
+	--enable-poison-system-directories			\
+	--enable-threads					\
+	--enable-symvers=gnu					\
 	--with-build-sysroot=%{sysroot}				\
-	--with-headers						\
-	--disable-multilib					\
-	--disable-nls						\
-	--disable-shared					\
-	--with-float=soft					\
+	--with-build-time-tools=%{sysroot}%{prefix}/bin		\
+	--with-bugurl=https://qa.mandriva.com			\
+	--with-arch=armv5te					\
+	--with-gnu-as						\
+	--with-gnu-ld						\
+	--with-newlib						\
+	--without-headers					\
 	--target=%{target}
-    mkdir -p %{target}/libgcc
-    ln -sf %{sysroot}%{prefix}/include %{target}/libgcc/include
-    %make
-    make install
+    make
+    make installdirs install-target
+    make -C gcc install-common install-cpp install-driver install-headers
+    mv -f %{sysroot}%{gccdir}/include-fixed/*.h %{sysroot}%{gccdir}/include
+    rm -fr %{sysroot}%{gccdir}/include-fixed
 popd
 
-# build glibc
-rm -fr glibc-%{glibc_version}/build/*
-pushd glibc-%{glibc_version}/build
-    CONFIGURE_TOP=..						\
-    CC=%{target}-gcc						\
-    PATH=%{sysroot}%{prefix}/bin:%{sysroot}%{_bindir}:$PATH	\
-    %configure2_5x						\
-	--without-fp						\
-	--without-selinux					\
+mkdir -p glibc-2.11-%{version}/build
+rm -fr glibc-2.11-%{version}/build/*
+export CC=%{sysroot}%{_bindir}/%{target}-gcc
+pushd glibc-2.11-%{version}/build
+    ../configure						\
+	--prefix=%{prefix}					\
+	--disable-nls						\
 	--disable-profile					\
+	--disable-shared					\
+	--enable-kernel=2.6.16					\
+	--without-gd						\
+	--with-headers=%{sysroot}%{prefix}/include		\
 	--host=%{target}					\
 	--target=%{target}
-    make install DESTDIR=%{sysroot}
+    make install_root=%{sysroot}				\
+	 install-bootstrap-headers=yes				\
+	 install-headers
+    make csu/subdir_lib
+    cp csu/crt1.o csu/crti.o csu/crtn.o				\
+	%{sysroot}%{prefix}/lib
+    %{sysroot}%{_bindir}/%{target}-gcc -o			\
+	%{sysroot}%{prefix}/lib/libc.so -nostdlib -nostartfiles	\
+	-shared -x c /dev/null
 popd
-
-# build gcc
-rm -fr gcc-%{gcc_version}/build/*
-pushd gcc-%{gcc_version}/build
-    CONFIGURE_TOP=..						\
-    CC=%{__cc}							\
-    CFLAGS="$OPT_FLAGS" 					\
-    CXXFLAGS="$OPT_FLAGS"					\
-    %configure2_5x						\
-	--disable-libgcj					\
-	--disable-libffi					\
-	--disable-libgomp					\
-	--disable-libquadmath					\
-	--disable-libquadmath-support				\
-	--disable-libmudflap					\
-	--disable-libssp					\
-	--enable-long-long					\
-	--disable-werror					\
-	--enable-__cxa_atexit					\
-	--disable-bootstrap					\
-	--enable-checking=release				\
-	--enable-gnu-unique-object				\
-	--enable-languages="c,c++"				\
-	--enable-linker-build-id				\
-	--disable-plugin					\
-	--enable-threads=posix					\
-	--with-system-zlib					\
-	--with-bugurl=https://qa.mandriva.com/			\
-	--with-build-sysroot=%{sysroot}				\
-	--with-headers						\
-	--disable-multilib					\
-	--disable-nls						\
-	--disable-shared					\
-	--with-float=soft					\
-	--target=%{target}
-    mkdir -p %{target}/libgcc
-    ln -sf %{sysroot}%{prefix}/include %{target}/libgcc/include
-    %make
-popd
+unset CC
 
 #-----------------------------------------------------------------------
 %install
-pushd binutils-%{binutils_version}/build
-    %makeinstall_std
-    rm -fr %{buildroot}%{_infodir}
-    rm -fr %{buildroot}%{_libdir}/libiberty.a
-    rm -f %{buildroot}%{_mandir}/man1/{dlltool,nlmconv,windmc,windres}.1*
-    rm -f %{buildroot}%{_mandir}/man1/wind*
-popd
-
-pushd glibc-%{glibc_version}/build
-    %makeinstall_std
-popd
-
-pushd gcc-%{gcc_version}/build
-    %makeinstall_std
-popd
+cp -fpar %{sysroot}/* %{buildroot}
 
 #-----------------------------------------------------------------------
 %clean
