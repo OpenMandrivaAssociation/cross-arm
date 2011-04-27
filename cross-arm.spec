@@ -13,7 +13,8 @@
 %define		target		arm-none-linux-gnueabi
 %define		full_version	2010.09-50
 %define		prefix		%{_prefix}/%{target}
-%define 	sysroot		%{_builddir}/arm-%{full_version}-%{target}/sysroot
+%define 	build_sysroot	%{_builddir}/arm-%{full_version}-%{target}/sysroot
+%define 	sysroot		%{_prefix}/arm-%{full_version}-%{target}
 %define		gccdir		%{_libdir}/gcc/%{target}/4.5.1
 
 Name:		cross-arm
@@ -42,6 +43,7 @@ BuildRequires:	texinfo
 BuildRequires:	texlive
 
 Patch0:		cross-arm-glibc.patch
+Patch1:		cross-arm-libgcc.patch
 
 %description
 Sourcery G++ Lite for ARM GNU/Linux is intended for developers working on
@@ -178,13 +180,15 @@ tar jxf gcc-%{full_version}.tar.bz2
 mkdir -p gcc-4.5-%{version}/build
 
 %patch0 -p1
+%patch1 -p1
 
 #-----------------------------------------------------------------------
 %build
-export PATH=%{sysroot}%{_bindir}:$PATH
-mkdir -p %{sysroot}%{prefix}/include
-mkdir -p %{sysroot}%{prefix}/lib
+export PATH=%{build_sysroot}%{_bindir}:$PATH
+mkdir -p %{build_sysroot}%{prefix}/include
+mkdir -p %{build_sysroot}%{prefix}/lib
 
+%if 0
 pushd binutils-%{version}/build
     CONFIGURE_TOP=..						\
     %configure2_5x						\
@@ -192,37 +196,39 @@ pushd binutils-%{version}/build
 	--disable-werror					\
 	--target=%{target}
     %make
-    DESTDIR=%{sysroot} make installdirs install-host install-target
-    rm -fr %{sysroot}%{_infodir}
-    rm -fr %{sysroot}%{_libdir}/libiberty.a
-    rm -f %{sysroot}%{_mandir}/man1/%{target}-{dlltool,nlmconv,windmc,windres}.1*
+    DESTDIR=%{build_sysroot} make installdirs install-host install-target
+    rm -fr %{build_sysroot}%{_infodir}
+    rm -fr %{build_sysroot}%{_libdir}/libiberty.a
+    rm -f %{build_sysroot}%{_mandir}/man1/%{target}-{dlltool,nlmconv,windmc,windres}.1*
 popd
 
 pushd linux-%{version}
-    make ARCH=arm INSTALL_HDR_PATH=%{sysroot}%{prefix} headers_install
+    make ARCH=arm INSTALL_HDR_PATH=%{build_sysroot}%{prefix}	\
+	 headers_install
 popd
 
 rm -fr glibc-2.11-%{version}/build/*
 pushd glibc-2.11-%{version}/build
     ../configure						\
-	--prefix=%{sysroot}%{prefix}				\
+	--prefix=%{build_sysroot}%{prefix}			\
 	--disable-nls						\
 	--disable-profile					\
 	--disable-shared					\
 	--enable-kernel=2.6.16					\
 	--without-gd						\
-	--with-headers=%{sysroot}%{prefix}/include		\
+	--with-headers=%{build_sysroot}%{prefix}/include	\
 	--target=%{target}
     make install-bootstrap-headers=yes				\
 	 install-headers
 popd
+%endif
 
 rm -fr gcc-4.5-%{version}/build/*
 pushd gcc-4.5-%{version}/build
     ../configure						\
-	--prefix=%{sysroot}%{_prefix}				\
-	--libdir=%{sysroot}%{_libdir}				\
-	--libexecdir=%{sysroot}%{_libdir}			\
+	--prefix=%{build_sysroot}%{_prefix}			\
+	--libdir=%{build_sysroot}%{_libdir}			\
+	--libexecdir=%{build_sysroot}%{_libdir}			\
 	--disable-nls						\
 	--disable-decimal-float					\
 	--disable-shared					\
@@ -236,12 +242,12 @@ pushd gcc-4.5-%{version}/build
 	--disable-libunwind-exceptions				\
 	--enable-__cxa_atexit					\
 	--enable-extra-sgxxlite-multilibs			\
-	--enable-languages="c"					\
+	--enable-languages="c,c++"				\
 	--enable-poison-system-directories			\
 	--enable-threads					\
 	--enable-symvers=gnu					\
-	--with-build-sysroot=%{sysroot}				\
-	--with-build-time-tools=%{sysroot}%{prefix}/bin		\
+	--with-build-sysroot=%{build_sysroot}			\
+	--with-build-time-tools=%{build_sysroot}%{prefix}/bin	\
 	--with-bugurl=https://qa.mandriva.com			\
 	--with-arch=armv5te					\
 	--with-gnu-as						\
@@ -249,16 +255,25 @@ pushd gcc-4.5-%{version}/build
 	--with-newlib						\
 	--without-headers					\
 	--target=%{target}
-    make
+    for dir in armv4t thumb2; do
+	mkdir -p %{target}/$dir/libgcc
+	ln -sf %{build_sysroot}/%{prefix}/include %{target}/$dir/libgcc
+    done
+    ln -sf %{build_sysroot}/%{prefix}/include %{target}/libgcc
+    make LDFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	 CPPFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	 build_tooldir=%{build_sysroot}%{prefix}/bin
     make installdirs install-target
-    make -C gcc install-common install-cpp install-driver install-headers
-    mv -f %{sysroot}%{gccdir}/include-fixed/*.h %{sysroot}%{gccdir}/include
-    rm -fr %{sysroot}%{gccdir}/include-fixed
+    make -C gcc install-common install-cpp install-driver	\
+		install-headers
+    mv -f %{build_sysroot}%{gccdir}/include-fixed/*.h		\
+	  %{build_sysroot}%{gccdir}/include
+    rm -fr %{build_sysroot}%{gccdir}/include-fixed
 popd
 
 mkdir -p glibc-2.11-%{version}/build
 rm -fr glibc-2.11-%{version}/build/*
-export CC=%{sysroot}%{_bindir}/%{target}-gcc
+export CC=%{build_sysroot}%{_bindir}/%{target}-gcc
 pushd glibc-2.11-%{version}/build
     ../configure						\
 	--prefix=%{prefix}					\
@@ -267,24 +282,24 @@ pushd glibc-2.11-%{version}/build
 	--disable-shared					\
 	--enable-kernel=2.6.16					\
 	--without-gd						\
-	--with-headers=%{sysroot}%{prefix}/include		\
+	--with-headers=%{build_sysroot}%{prefix}/include	\
 	--host=%{target}					\
 	--target=%{target}
-    make install_root=%{sysroot}				\
+    make install_root=%{build_sysroot}				\
 	 install-bootstrap-headers=yes				\
 	 install-headers
     make csu/subdir_lib
     cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{sysroot}%{prefix}/lib
-    %{sysroot}%{_bindir}/%{target}-gcc -o			\
-	%{sysroot}%{prefix}/lib/libc.so -nostdlib -nostartfiles	\
-	-shared -x c /dev/null
+	%{build_sysroot}%{prefix}/lib
+    %{build_sysroot}%{_bindir}/%{target}-gcc -o			\
+	%{build_sysroot}%{prefix}/lib/libc.so			\
+	-nostdlib -nostartfiles -shared -x c /dev/null
 popd
 unset CC
 
 #-----------------------------------------------------------------------
 %install
-cp -fpar %{sysroot}/* %{buildroot}
+cp -fpar %{build_sysroot}/* %{buildroot}
 
 #-----------------------------------------------------------------------
 %clean
