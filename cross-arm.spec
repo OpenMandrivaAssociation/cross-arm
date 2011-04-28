@@ -224,6 +224,91 @@ pushd glibc-2.11-%{version}/build
 popd
 %endif
 
+ln -sf %{build_sysroot}/%{prefix}/include %{build_sysroot}/%{prefix}/bin
+
+%if 1
+rm -fr gcc-4.5-%{version}/build/*
+pushd gcc-4.5-%{version}/build
+    ../configure						\
+	--prefix=%{_prefix}					\
+	--libdir=%{_libdir}					\
+	--libexecdir=%{_libdir}					\
+	--disable-nls						\
+	--disable-decimal-float					\
+	--disable-shared					\
+	--disable-threads					\
+	--disable-libffi					\
+	--disable-libgcj					\
+	--disable-libgomp					\
+	--disable-libmudflap					\
+	--disable-libssp					\
+	--disable-libstdcxx-pch					\
+	--disable-libunwind-exceptions				\
+	--enable-__cxa_atexit					\
+	--enable-extra-sgxxlite-multilibs			\
+	--enable-languages="c"					\
+	--enable-poison-system-directories			\
+	--enable-threads					\
+	--enable-symvers=gnu					\
+	--with-build-sysroot=%{build_sysroot}			\
+	--with-build-time-tools=%{build_sysroot}%{prefix}/bin	\
+	--with-bugurl=https://qa.mandriva.com			\
+	--with-arch=armv5te					\
+	--with-gnu-as						\
+	--with-gnu-ld						\
+	--with-newlib						\
+	--without-headers					\
+	--target=%{target}
+    for dir in armv4t thumb2; do
+	mkdir -p %{target}/$dir/libgcc
+	ln -sf %{build_sysroot}/%{prefix}/include %{target}/$dir/libgcc
+    done
+    mkdir -p %{target}/libgcc
+    ln -sf %{build_sysroot}/%{prefix}/include %{target}/libgcc
+    make LDFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	 CPPFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	 build_tooldir=%{build_sysroot}%{prefix}/bin
+    DESTDIR=%{build_sysroot} make install
+    mv -f %{build_sysroot}%{gccdir}/include-fixed/*.h		\
+	  %{build_sysroot}%{gccdir}/include
+    rm -fr %{build_sysroot}%{gccdir}/include-fixed
+popd
+%endif
+
+mkdir -p glibc-2.11-%{version}/build
+rm -fr glibc-2.11-%{version}/build/*
+export CC=%{build_sysroot}%{_bindir}/%{target}-gcc
+pushd glibc-2.11-%{version}/build
+    ../configure						\
+	--prefix=%{prefix}					\
+	--disable-nls						\
+	--disable-profile					\
+	--disable-shared					\
+	--enable-kernel=2.6.16					\
+	--without-gd						\
+	--with-headers=%{build_sysroot}%{prefix}/include	\
+	--host=%{target}					\
+	--target=%{target}
+    make install_root=%{build_sysroot}				\
+	 install-bootstrap-headers=yes				\
+	 install-headers
+    make csu/subdir_lib
+    #--
+    cp csu/crt1.o csu/crti.o csu/crtn.o				\
+	%{build_sysroot}%{prefix}/armv4t
+    %{build_sysroot}%{_bindir}/%{target}-gcc -march=armv4t	\
+	-o %{build_sysroot}%{prefix}/armv4t/libc.so		\
+	-nostdlib -nostartfiles -shared -x c /dev/null
+    #--
+    cp csu/crt1.o csu/crti.o csu/crtn.o				\
+	%{build_sysroot}%{prefix}/thumb2
+    %{build_sysroot}%{_bindir}/%{target}-gcc -mthumb		\
+	-march=armv7-a						\
+	-o %{build_sysroot}%{prefix}/thumb2/libc.so		\
+	-nostdlib -nostartfiles -shared -x c /dev/null
+popd
+unset CC
+
 rm -fr gcc-4.5-%{version}/build/*
 pushd gcc-4.5-%{version}/build
     ../configure						\
@@ -255,6 +340,7 @@ pushd gcc-4.5-%{version}/build
 	--with-gnu-ld						\
 	--with-newlib						\
 	--without-headers					\
+	--host=%{target}					\
 	--target=%{target}
     for dir in armv4t thumb2; do
 	mkdir -p %{target}/$dir/libgcc
@@ -270,40 +356,6 @@ pushd gcc-4.5-%{version}/build
 	  %{build_sysroot}%{gccdir}/include
     rm -fr %{build_sysroot}%{gccdir}/include-fixed
 popd
-
-mkdir -p glibc-2.11-%{version}/build
-rm -fr glibc-2.11-%{version}/build/*
-export CC=%{build_sysroot}%{_bindir}/%{target}-gcc
-pushd glibc-2.11-%{version}/build
-    ../configure						\
-	--prefix=%{prefix}					\
-	--disable-nls						\
-	--disable-profile					\
-	--disable-shared					\
-	--enable-kernel=2.6.16					\
-	--without-gd						\
-	--with-headers=%{build_sysroot}%{prefix}/include	\
-	--host=%{target}					\
-	--target=%{target}
-    make install_root=%{build_sysroot}				\
-	 install-bootstrap-headers=yes				\
-	 install-headers
-    make csu/subdir_lib
-    #--
-    cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_sysroot}%{prefix}/armv4t
-    %{build_sysroot}%{_bindir}/%{target}-gcc -march=armv4t	\
-	-o %{build_sysroot}%{prefix}/armv4t/libc.so		\
-	-nostdlib -nostartfiles -shared -x c /dev/null
-    #--
-    cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_sysroot}%{prefix}/thumb2
-    %{build_sysroot}%{_bindir}/%{target}-gcc -mthumb		\
-	-march=arm7-a						\
-	-o %{build_sysroot}%{prefix}/thumb2/libc.so		\
-	-nostdlib -nostartfiles -shared -x c /dev/null
-popd
-unset CC
 
 #-----------------------------------------------------------------------
 %install
