@@ -186,7 +186,8 @@ mkdir -p gcc-4.5-%{version}/build
 %build
 export PATH=%{build_sysroot}%{_bindir}:$PATH
 mkdir -p %{build_sysroot}%{prefix}/include
-mkdir -p %{build_sysroot}%{prefix}/lib
+mkdir -p %{build_sysroot}%{prefix}/armv4t
+mkdir -p %{build_sysroot}%{prefix}/thumb2
 
 %if 0
 pushd binutils-%{version}/build
@@ -226,9 +227,9 @@ popd
 rm -fr gcc-4.5-%{version}/build/*
 pushd gcc-4.5-%{version}/build
     ../configure						\
-	--prefix=%{build_sysroot}%{_prefix}			\
-	--libdir=%{build_sysroot}%{_libdir}			\
-	--libexecdir=%{build_sysroot}%{_libdir}			\
+	--prefix=%{_prefix}					\
+	--libdir=%{_libdir}					\
+	--libexecdir=%{_libdir}					\
 	--disable-nls						\
 	--disable-decimal-float					\
 	--disable-shared					\
@@ -259,13 +260,12 @@ pushd gcc-4.5-%{version}/build
 	mkdir -p %{target}/$dir/libgcc
 	ln -sf %{build_sysroot}/%{prefix}/include %{target}/$dir/libgcc
     done
+    mkdir -p %{target}/libgcc
     ln -sf %{build_sysroot}/%{prefix}/include %{target}/libgcc
     make LDFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
 	 CPPFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
 	 build_tooldir=%{build_sysroot}%{prefix}/bin
-    make installdirs install-target
-    make -C gcc install-common install-cpp install-driver	\
-		install-headers
+    DESTDIR=%{build_sysroot} make install
     mv -f %{build_sysroot}%{gccdir}/include-fixed/*.h		\
 	  %{build_sysroot}%{gccdir}/include
     rm -fr %{build_sysroot}%{gccdir}/include-fixed
@@ -289,10 +289,18 @@ pushd glibc-2.11-%{version}/build
 	 install-bootstrap-headers=yes				\
 	 install-headers
     make csu/subdir_lib
+    #--
     cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_sysroot}%{prefix}/lib
-    %{build_sysroot}%{_bindir}/%{target}-gcc -o			\
-	%{build_sysroot}%{prefix}/lib/libc.so			\
+	%{build_sysroot}%{prefix}/armv4t
+    %{build_sysroot}%{_bindir}/%{target}-gcc -march=armv4t	\
+	-o %{build_sysroot}%{prefix}/armv4t/libc.so		\
+	-nostdlib -nostartfiles -shared -x c /dev/null
+    #--
+    cp csu/crt1.o csu/crti.o csu/crtn.o				\
+	%{build_sysroot}%{prefix}/thumb2
+    %{build_sysroot}%{_bindir}/%{target}-gcc -mthumb		\
+	-march=arm7-a						\
+	-o %{build_sysroot}%{prefix}/thumb2/libc.so		\
 	-nostdlib -nostartfiles -shared -x c /dev/null
 popd
 unset CC
