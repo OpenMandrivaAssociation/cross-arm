@@ -43,7 +43,6 @@ BuildRequires:	texinfo
 BuildRequires:	texlive
 
 Patch0:		cross-arm-glibc.patch
-Patch1:		cross-arm-libgcc.patch
 
 %description
 Sourcery G++ Lite for ARM GNU/Linux is intended for developers working on
@@ -180,23 +179,26 @@ tar jxf gcc-%{full_version}.tar.bz2
 mkdir -p gcc-4.5-%{version}/build
 
 %patch0 -p1
-%patch1 -p1
 
 #-----------------------------------------------------------------------
 %build
 export PATH=%{build_sysroot}%{_bindir}:$PATH
 mkdir -p %{build_sysroot}%{prefix}/include
+mkdir -p %{build_sysroot}%{prefix}/lib
 mkdir -p %{build_sysroot}%{prefix}/armv4t
 mkdir -p %{build_sysroot}%{prefix}/thumb2
 
 %if 0
+rm -fr binutils-%{version}/build/*
 pushd binutils-%{version}/build
-    CONFIGURE_TOP=..						\
-    %configure2_5x						\
+    ../configure						\
+	--prefix=%{_prefix}					\
 	--disable-nls						\
 	--disable-werror					\
+	--with-sysroot=%{sysroot}				\
+	--with-build-sysroot=%{build_sysroot}			\
 	--target=%{target}
-    %make
+    make
     DESTDIR=%{build_sysroot} make installdirs install-host install-target
     rm -fr %{build_sysroot}%{_infodir}
     rm -fr %{build_sysroot}%{_libdir}/libiberty.a
@@ -211,22 +213,23 @@ popd
 rm -fr glibc-2.11-%{version}/build/*
 pushd glibc-2.11-%{version}/build
     ../configure						\
-	--prefix=%{build_sysroot}%{prefix}			\
+	--prefix=%{prefix}					\
 	--disable-nls						\
 	--disable-profile					\
-	--disable-shared					\
+	--enable-shared						\
 	--enable-kernel=2.6.16					\
+	--enable-add-ons					\
 	--without-gd						\
 	--with-headers=%{build_sysroot}%{prefix}/include	\
 	--target=%{target}
-    make install-bootstrap-headers=yes				\
-	 install-headers
+    make install_root=%{build_sysroot}				\
+	install-bootstrap-headers=yes install-headers
 popd
-%endif
 
 ln -sf %{build_sysroot}/%{prefix}/include %{build_sysroot}/%{prefix}/bin
+%endif
 
-%if 1
+%if 0
 rm -fr gcc-4.5-%{version}/build/*
 pushd gcc-4.5-%{version}/build
     ../configure						\
@@ -250,6 +253,7 @@ pushd gcc-4.5-%{version}/build
 	--enable-poison-system-directories			\
 	--enable-threads					\
 	--enable-symvers=gnu					\
+	--with-sysroot=%{sysroot}				\
 	--with-build-sysroot=%{build_sysroot}			\
 	--with-build-time-tools=%{build_sysroot}%{prefix}/bin	\
 	--with-bugurl=https://qa.mandriva.com			\
@@ -275,6 +279,7 @@ pushd gcc-4.5-%{version}/build
 popd
 %endif
 
+%if 0
 mkdir -p glibc-2.11-%{version}/build
 rm -fr glibc-2.11-%{version}/build/*
 export CC=%{build_sysroot}%{_bindir}/%{target}-gcc
@@ -283,8 +288,9 @@ pushd glibc-2.11-%{version}/build
 	--prefix=%{prefix}					\
 	--disable-nls						\
 	--disable-profile					\
-	--disable-shared					\
+	--enable-shared						\
 	--enable-kernel=2.6.16					\
+	--enable-add-ons					\
 	--without-gd						\
 	--with-headers=%{build_sysroot}%{prefix}/include	\
 	--host=%{target}					\
@@ -293,6 +299,12 @@ pushd glibc-2.11-%{version}/build
 	 install-bootstrap-headers=yes				\
 	 install-headers
     make csu/subdir_lib
+    #--
+    cp csu/crt1.o csu/crti.o csu/crtn.o				\
+	%{build_sysroot}%{prefix}/lib
+    %{build_sysroot}%{_bindir}/%{target}-gcc			\
+	-o %{build_sysroot}%{prefix}/lib/libc.so		\
+	-nostdlib -nostartfiles -shared -x c /dev/null
     #--
     cp csu/crt1.o csu/crti.o csu/crtn.o				\
 	%{build_sysroot}%{prefix}/armv4t
@@ -308,6 +320,7 @@ pushd glibc-2.11-%{version}/build
 	-nostdlib -nostartfiles -shared -x c /dev/null
 popd
 unset CC
+%endif
 
 rm -fr gcc-4.5-%{version}/build/*
 pushd gcc-4.5-%{version}/build
@@ -317,7 +330,7 @@ pushd gcc-4.5-%{version}/build
 	--libexecdir=%{_libdir}					\
 	--disable-nls						\
 	--disable-decimal-float					\
-	--disable-shared					\
+	--enable-shared						\
 	--disable-threads					\
 	--disable-libffi					\
 	--disable-libgcj					\
@@ -332,6 +345,7 @@ pushd gcc-4.5-%{version}/build
 	--enable-poison-system-directories			\
 	--enable-threads					\
 	--enable-symvers=gnu					\
+	--with-sysroot=%{sysroot}				\
 	--with-build-sysroot=%{build_sysroot}			\
 	--with-build-time-tools=%{build_sysroot}%{prefix}/bin	\
 	--with-bugurl=https://qa.mandriva.com			\
@@ -340,7 +354,6 @@ pushd gcc-4.5-%{version}/build
 	--with-gnu-ld						\
 	--with-newlib						\
 	--without-headers					\
-	--host=%{target}					\
 	--target=%{target}
     for dir in armv4t thumb2; do
 	mkdir -p %{target}/$dir/libgcc
@@ -348,7 +361,7 @@ pushd gcc-4.5-%{version}/build
     done
     mkdir -p %{target}/libgcc
     ln -sf %{build_sysroot}/%{prefix}/include %{target}/libgcc
-    make LDFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+    make LDFLAGS_FOR_TARGET="--sysroot=%{sysroot} -L%{build_sysroot}%{prefix}/lib"		\
 	 CPPFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
 	 build_tooldir=%{build_sysroot}%{prefix}/bin
     DESTDIR=%{build_sysroot} make install
@@ -356,6 +369,28 @@ pushd gcc-4.5-%{version}/build
 	  %{build_sysroot}%{gccdir}/include
     rm -fr %{build_sysroot}%{gccdir}/include-fixed
 popd
+
+%if 1
+mkdir -p glibc-2.11-%{version}/build
+rm -fr glibc-2.11-%{version}/build/*
+export CC=%{build_sysroot}%{_bindir}/%{target}-gcc
+pushd glibc-2.11-%{version}/build
+    ../configure						\
+	--prefix=%{prefix}					\
+	--disable-nls						\
+	--disable-profile					\
+	--enable-shared						\
+	--enable-kernel=2.6.16					\
+	--enable-add-ons					\
+	--without-gd						\
+	--with-headers=%{build_sysroot}%{prefix}/include	\
+	--host=%{target}					\
+	--target=%{target}
+    make
+    make install_root=%{build_sysroot} install
+popd
+unset CC
+%endif
 
 #-----------------------------------------------------------------------
 %install
