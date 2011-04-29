@@ -225,8 +225,8 @@ pushd glibc-2.11-%{version}/build
     make install_root=%{build_sysroot}				\
 	install-bootstrap-headers=yes install-headers
 popd
-
 ln -sf %{build_sysroot}/%{prefix}/include %{build_sysroot}/%{prefix}/bin
+ln -sf %{build_sysroot}/%{prefix}/lib %{build_sysroot}/%{prefix}/bin
 %endif
 
 %if 0
@@ -347,7 +347,7 @@ pushd gcc-4.5-%{version}/build
 	--enable-symvers=gnu					\
 	--with-sysroot=%{sysroot}				\
 	--with-build-sysroot=%{build_sysroot}			\
-	--with-build-time-tools=%{build_sysroot}%{prefix}/bin	\
+	--with-build-time-tools=%{build_sysroot}%{prefix}	\
 	--with-bugurl=https://qa.mandriva.com			\
 	--with-arch=armv5te					\
 	--with-gnu-as						\
@@ -361,8 +361,8 @@ pushd gcc-4.5-%{version}/build
     done
     mkdir -p %{target}/libgcc
     ln -sf %{build_sysroot}/%{prefix}/include %{target}/libgcc
-    make LDFLAGS_FOR_TARGET="--sysroot=%{sysroot} -L%{build_sysroot}%{prefix}/lib"		\
-	 CPPFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+    make LDFLAGS_FOR_TARGET=--sysroot=%{build_sysroot}		\
+	 CPPFLAGS_FOR_TARGET=--sysroot=%{build_sysroot}		\
 	 build_tooldir=%{build_sysroot}%{prefix}/bin
     DESTDIR=%{build_sysroot} make install
     mv -f %{build_sysroot}%{gccdir}/include-fixed/*.h		\
