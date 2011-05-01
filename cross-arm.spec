@@ -1,7 +1,9 @@
+%define		_requires_exceptions libc.so.6\\|libgcc_s.so.1
+
 %define		target		arm-none-linux-gnueabi
 %define		full_version	2010.09-50
 %define		prefix		%{_prefix}/%{target}
-%define 	build_sysroot	%{_builddir}/arm-%{full_version}-%{target}/sysroot
+%define 	sysroot		%{_builddir}/arm-%{full_version}-%{target}/sysroot
 %define		gccdir		%{_libdir}/gcc/%{target}/4.5.1
 
 Name:		cross-arm
@@ -32,6 +34,11 @@ BuildRequires:	gettext
 BuildRequires:	texinfo
 BuildRequires:	texlive
 
+Requires:	cross-arm-binutils = %{version}-%{release}
+Requires:	cross-arm-gcc = %{version}-%{release}
+Requires:	cross-arm-c++ = %{version}-%{release}
+Requires:	cross-arm-glibc = %{version}-%{release}
+
 # backport minor change required by newer make
 Patch0:		cross-arm-glibc.patch
 
@@ -39,6 +46,9 @@ Patch0:		cross-arm-glibc.patch
 Sourcery G++ Lite for ARM GNU/Linux is intended for developers working on
 embedded GNU/Linux applications. It may also be used for Linux kernel
 development and debugging, or to build a GNU/Linux distribution.
+
+%files
+%defattr(-,root,root,-)
 
 #-----------------------------------------------------------------------
 %package	binutils
@@ -79,6 +89,8 @@ binutils Sourcery G++ Lite for ARM GNU/Linux.
 %{_mandir}/man1/%{target}-size.1*
 %{_mandir}/man1/%{target}-strings.1*
 %{_mandir}/man1/%{target}-strip.1*
+%dir %{prefix}/bin
+%dir %{prefix}/lib
 %{prefix}/bin/ar
 %{prefix}/bin/as
 %{prefix}/bin/ld
@@ -92,6 +104,7 @@ binutils Sourcery G++ Lite for ARM GNU/Linux.
 #-----------------------------------------------------------------------
 %package	gcc
 Summary:	gcc Sourcery G++ Lite for ARM GNU/Linux
+Requires:	cross-arm-binutils = %{version}-%{release}
 
 %description	gcc
 gcc Sourcery G++ Lite for ARM GNU/Linux.
@@ -148,7 +161,9 @@ gcc Sourcery G++ Lite for ARM GNU/Linux.
 %{prefix}/bin/gcc
 # could be in a libgcc package
 %{prefix}/lib/libgcc*
+%dir %{prefix}/lib/armv4t
 %{prefix}/lib/armv4t/libgcc*
+%dir %{prefix}/lib/thumb2
 %{prefix}/lib/thumb2/libgcc*
 %{_mandir}/man1/%{target}-cpp.1*
 %{_mandir}/man1/%{target}-gcc.1*
@@ -157,6 +172,8 @@ gcc Sourcery G++ Lite for ARM GNU/Linux.
 #-----------------------------------------------------------------------
 %package	c++
 Summary:	c++ Sourcery G++ Lite for ARM GNU/Linux
+Requires:	cross-arm-gcc = %{version}-%{release}
+Requires:	cross-arm-glibc = %{version}-%{release}
 
 %description	c++
 c++ Sourcery G++ Lite for ARM GNU/Linux.
@@ -182,6 +199,7 @@ c++ Sourcery G++ Lite for ARM GNU/Linux.
 #-----------------------------------------------------------------------
 %package	glibc
 Summary:	glibc Sourcery G++ Lite for ARM GNU/Linux
+Requires:	cross-arm-gcc = %{version}-%{release}
 
 %description	glibc
 glibc Sourcery G++ Lite for ARM GNU/Linux.
@@ -205,7 +223,9 @@ glibc Sourcery G++ Lite for ARM GNU/Linux.
 %{prefix}/etc
 %{prefix}/include
 %exclude %{prefix}/include/c++
-%{prefix}/lib
+%{prefix}/lib/*
+%exclude %dir %{prefix}/lib/armv4t
+%exclude %dir %{prefix}/lib/thumb2
 %exclude %{prefix}/lib/ldscripts
 %exclude %{prefix}/lib/libgcc*
 %exclude %{prefix}/lib/armv4t/libgcc*
@@ -238,9 +258,9 @@ mkdir -p gcc-4.5-%{version}/build
 
 #-----------------------------------------------------------------------
 %build
-export PATH=%{build_sysroot}%{_bindir}:$PATH
-mkdir -p %{build_sysroot}%{prefix}/include
-mkdir -p %{build_sysroot}%{prefix}/lib/{armv4t,thumb2}
+export PATH=%{sysroot}%{_bindir}:$PATH
+mkdir -p %{sysroot}%{prefix}/include
+mkdir -p %{sysroot}%{prefix}/lib/{armv4t,thumb2}
 
 # binutils
 rm -fr binutils-%{version}/build/*
@@ -249,19 +269,19 @@ pushd binutils-%{version}/build
 	--prefix=%{_prefix}					\
 	--disable-nls						\
 	--disable-werror					\
-	--with-sysroot=%{prefix}				\
-	--with-build-sysroot=%{build_sysroot}			\
+	--with-sysroot=/					\
+	--with-build-sysroot=%{sysroot}				\
 	--target=%{target}
     make
-    DESTDIR=%{build_sysroot} make installdirs install-host install-target
-    rm -fr %{build_sysroot}%{_infodir}
-    rm -fr %{build_sysroot}%{_libdir}/libiberty.a
-    rm -f %{build_sysroot}%{_mandir}/man1/%{target}-{dlltool,nlmconv,windmc,windres}.1*
+    DESTDIR=%{sysroot} make installdirs install-host install-target
+    rm -fr %{sysroot}%{_infodir}
+    rm -fr %{sysroot}%{_libdir}/libiberty.a
+    rm -f %{sysroot}%{_mandir}/man1/%{target}-{dlltool,nlmconv,windmc,windres}.1*
 popd
 
 # kernel headers
 pushd linux-%{version}
-    make ARCH=arm INSTALL_HDR_PATH=%{build_sysroot}%{prefix}	\
+    make ARCH=arm INSTALL_HDR_PATH=%{sysroot}%{prefix}		\
 	 headers_install
 popd
 
@@ -277,13 +297,13 @@ pushd glibc-2.11-%{version}/build
 	--enable-kernel=2.6.16					\
 	--enable-add-ons					\
 	--without-gd						\
-	--with-headers=%{build_sysroot}%{prefix}/include	\
+	--with-headers=%{sysroot}%{prefix}/include		\
 	--target=%{target}
-    make install_root=%{build_sysroot}				\
+    make install_root=%{sysroot}				\
 	install-bootstrap-headers=yes install-headers
 popd
-ln -sf %{build_sysroot}/%{prefix}/include %{build_sysroot}/%{prefix}/bin
-ln -sf %{build_sysroot}/%{prefix}/lib %{build_sysroot}/%{prefix}/bin
+ln -sf %{sysroot}/%{prefix}/include %{sysroot}/%{prefix}/bin
+ln -sf %{sysroot}/%{prefix}/lib %{sysroot}/%{prefix}/bin
 
 # gcc(1) build static and c only
 rm -fr gcc-4.5-%{version}/build/*
@@ -309,9 +329,8 @@ pushd gcc-4.5-%{version}/build
 	--enable-poison-system-directories			\
 	--enable-threads					\
 	--enable-symvers=gnu					\
-	--with-sysroot=%{prefix}				\
-	--with-build-sysroot=%{build_sysroot}			\
-	--with-build-time-tools=%{build_sysroot}%{prefix}/bin	\
+	--with-build-sysroot=%{sysroot}				\
+	--with-build-time-tools=%{sysroot}%{prefix}/bin		\
 	--with-bugurl=https://qa.mandriva.com			\
 	--with-arch=armv5te					\
 	--with-gnu-as						\
@@ -321,23 +340,23 @@ pushd gcc-4.5-%{version}/build
 	--target=%{target}
     for dir in armv4t thumb2; do
 	mkdir -p %{target}/$dir/libgcc
-	ln -sf %{build_sysroot}/%{prefix}/include %{target}/$dir/libgcc
+	ln -sf %{sysroot}/%{prefix}/include %{target}/$dir/libgcc
     done
     mkdir -p %{target}/libgcc
-    ln -sf %{build_sysroot}/%{prefix}/include %{target}/libgcc
-    make LDFLAGS_FOR_TARGET=--sysroot=%{build_sysroot}		\
-	 CPPFLAGS_FOR_TARGET=--sysroot=%{build_sysroot}		\
-	 build_tooldir=%{build_sysroot}%{prefix}
-    DESTDIR=%{build_sysroot} make install
-    mv -f %{build_sysroot}%{gccdir}/include-fixed/*.h		\
-	  %{build_sysroot}%{gccdir}/include
-    rm -fr %{build_sysroot}%{gccdir}/include-fixed
+    ln -sf %{sysroot}/%{prefix}/include %{target}/libgcc
+    make LDFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	 CPPFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	 build_tooldir=%{sysroot}%{prefix}
+    DESTDIR=%{sysroot} make install
+    mv -f %{sysroot}%{gccdir}/include-fixed/*.h			\
+	  %{sysroot}%{gccdir}/include
+    rm -fr %{sysroot}%{gccdir}/include-fixed
 popd
 
 # glibc(2) install proper headers and fake multilib libc.so
 mkdir -p glibc-2.11-%{version}/build
 rm -fr glibc-2.11-%{version}/build/*
-export CC=%{build_sysroot}%{_bindir}/%{target}-gcc
+export CC=%{sysroot}%{_bindir}/%{target}-gcc
 pushd glibc-2.11-%{version}/build
     ../configure						\
 	--prefix=%{prefix}					\
@@ -347,31 +366,31 @@ pushd glibc-2.11-%{version}/build
 	--enable-kernel=2.6.16					\
 	--enable-add-ons					\
 	--without-gd						\
-	--with-headers=%{build_sysroot}%{prefix}/include	\
+	--with-headers=%{sysroot}%{prefix}/include		\
 	--host=%{target}					\
 	--target=%{target}
-    make install_root=%{build_sysroot}				\
+    make install_root=%{sysroot}				\
 	 install-bootstrap-headers=yes				\
 	 install-headers
     make csu/subdir_lib
     #--
     cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_sysroot}%{prefix}/lib
-    %{build_sysroot}%{_bindir}/%{target}-gcc			\
-	-o %{build_sysroot}%{prefix}/lib/libc.so		\
+	%{sysroot}%{prefix}/lib
+    %{sysroot}%{_bindir}/%{target}-gcc				\
+	-o %{sysroot}%{prefix}/lib/libc.so			\
 	-nostdlib -nostartfiles -shared -x c /dev/null
     #--
     cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_sysroot}%{prefix}/lib/armv4t
-    %{build_sysroot}%{_bindir}/%{target}-gcc -march=armv4t	\
-	-o %{build_sysroot}%{prefix}/lib/armv4t/libc.so		\
+	%{sysroot}%{prefix}/lib/armv4t
+    %{sysroot}%{_bindir}/%{target}-gcc -march=armv4t		\
+	-o %{sysroot}%{prefix}/lib/armv4t/libc.so		\
 	-nostdlib -nostartfiles -shared -x c /dev/null
     #--
     cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_sysroot}%{prefix}/lib/thumb2
-    %{build_sysroot}%{_bindir}/%{target}-gcc -mthumb		\
+	%{sysroot}%{prefix}/lib/thumb2
+    %{sysroot}%{_bindir}/%{target}-gcc -mthumb			\
 	-march=armv7-a						\
-	-o %{build_sysroot}%{prefix}/lib/thumb2/libc.so		\
+	-o %{sysroot}%{prefix}/lib/thumb2/libc.so		\
 	-nostdlib -nostartfiles -shared -x c /dev/null
 popd
 unset CC
@@ -400,9 +419,8 @@ pushd gcc-4.5-%{version}/build
 	--enable-poison-system-directories			\
 	--enable-threads					\
 	--enable-symvers=gnu					\
-	--with-sysroot=%{prefix}				\
-	--with-build-sysroot=%{build_sysroot}			\
-	--with-build-time-tools=%{build_sysroot}%{prefix}/bin	\
+	--with-build-sysroot=%{sysroot}				\
+	--with-build-time-tools=%{sysroot}%{prefix}/bin		\
 	--with-bugurl=https://qa.mandriva.com			\
 	--with-arch=armv5te					\
 	--with-gnu-as						\
@@ -412,24 +430,24 @@ pushd gcc-4.5-%{version}/build
 	--target=%{target}
     for dir in armv4t thumb2; do
 	mkdir -p %{target}/$dir/libgcc
-	ln -sf %{build_sysroot}/%{prefix}/include %{target}/$dir/libgcc
+	ln -sf %{sysroot}/%{prefix}/include %{target}/$dir/libgcc
     done
     mkdir -p %{target}/libgcc
-    ln -sf %{build_sysroot}/%{prefix}/include %{target}/libgcc
-    make LDFLAGS_FOR_TARGET=--sysroot=%{build_sysroot}		\
-	 CPPFLAGS_FOR_TARGET=--sysroot=%{build_sysroot}		\
-	 build_tooldir=%{build_sysroot}%{prefix}
-    DESTDIR=%{build_sysroot} make install
-    mv -f %{build_sysroot}%{gccdir}/include-fixed/*.h		\
-	  %{build_sysroot}%{gccdir}/include
-    rm -fr %{build_sysroot}%{gccdir}/include-fixed
-    rm -fr %{build_sysroot}%{gccdir}/install-tools
+    ln -sf %{sysroot}/%{prefix}/include %{target}/libgcc
+    make LDFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	 CPPFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	 build_tooldir=%{sysroot}%{prefix}
+    DESTDIR=%{sysroot} make install
+    mv -f %{sysroot}%{gccdir}/include-fixed/*.h			\
+	  %{sysroot}%{gccdir}/include
+    rm -fr %{sysroot}%{gccdir}/include-fixed
+    rm -fr %{sysroot}%{gccdir}/install-tools
 popd
 
 # glibc(3) build all default targets
 mkdir -p glibc-2.11-%{version}/build
 rm -fr glibc-2.11-%{version}/build/*
-export CC="%{build_sysroot}%{_bindir}/%{target}-gcc -march=armv4t"
+export CC="%{sysroot}%{_bindir}/%{target}-gcc -march=armv4t"
 pushd glibc-2.11-%{version}/build
     ../configure						\
 	--prefix=%{prefix}					\
@@ -441,15 +459,15 @@ pushd glibc-2.11-%{version}/build
 	--enable-kernel=2.6.16					\
 	--enable-add-ons					\
 	--without-gd						\
-	--with-headers=%{build_sysroot}%{prefix}/include	\
+	--with-headers=%{sysroot}%{prefix}/include		\
 	--host=%{target}					\
 	--target=%{target}
     make
-    make install_root=%{build_sysroot} install
+    make install_root=%{sysroot} install
 popd
 #--
 rm -fr glibc-2.11-%{version}/build/*
-export CC="%{build_sysroot}%{_bindir}/%{target}-gcc -mthumb -march=armv7-a"
+export CC="%{sysroot}%{_bindir}/%{target}-gcc -mthumb -march=armv7-a"
 pushd glibc-2.11-%{version}/build
     ../configure						\
 	--prefix=%{prefix}					\
@@ -461,15 +479,15 @@ pushd glibc-2.11-%{version}/build
 	--enable-kernel=2.6.16					\
 	--enable-add-ons					\
 	--without-gd						\
-	--with-headers=%{build_sysroot}%{prefix}/include	\
+	--with-headers=%{sysroot}%{prefix}/include		\
 	--host=%{target}					\
 	--target=%{target}
     make
-    make install_root=%{build_sysroot} install
+    make install_root=%{sysroot} install
 popd
 #--
 rm -fr glibc-2.11-%{version}/build/*
-export CC=%{build_sysroot}%{_bindir}/%{target}-gcc
+export CC=%{sysroot}%{_bindir}/%{target}-gcc
 pushd glibc-2.11-%{version}/build
     ../configure						\
 	--prefix=%{prefix}					\
@@ -481,33 +499,31 @@ pushd glibc-2.11-%{version}/build
 	--enable-kernel=2.6.16					\
 	--enable-add-ons					\
 	--without-gd						\
-	--with-headers=%{build_sysroot}%{prefix}/include	\
+	--with-headers=%{sysroot}%{prefix}/include		\
 	--host=%{target}					\
 	--target=%{target}
     make
-    make install_root=%{build_sysroot} install
+    make install_root=%{sysroot} install
 popd
 unset CC
 
 for dir in lib include; do
-    [ -d %{build_sysroot}%{_prefix}/$dir ] &&
-	rm -fr %{build_sysroot}%{_prefix}/$dir
-    [ -e %{build_sysroot}%{_prefix}/$dir ] ||
-	ln -sf %{build_sysroot}%{prefix}/$dir %{build_sysroot}%{_prefix}/$dir
+    [ -d %{sysroot}%{_prefix}/$dir ] &&
+	rm -fr %{sysroot}%{_prefix}/$dir
+    [ -e %{sysroot}%{_prefix}/$dir ] ||
+	ln -sf %{sysroot}%{prefix}/$dir %{sysroot}%{_prefix}/$dir
 done
 
 # Rewrite linker scripts to use relative paths
 #--
-mv %{build_sysroot}%{prefix}/lib/libc.so{,.orig}
-cat > %{build_sysroot}%{prefix}/lib/libc.so << EOF
+cat > %{sysroot}%{prefix}/lib/libc.so << EOF
 /* GNU ld script
    Use the shared library, but some functions are only in
    the static library, so try that secondarily.  */
 OUTPUT_FORMAT(elf32-littlearm)
 GROUP ( libc.so.6 libc_nonshared.a  AS_NEEDED ( ld-linux.so.3 ) )
 EOF
-mv %{build_sysroot}%{prefix}/lib/libpthread.so{,.orig}
-cat > %{build_sysroot}%{prefix}/lib/libpthread.so << EOF
+cat > %{sysroot}%{prefix}/lib/libpthread.so << EOF
 /* GNU ld script
    Use the shared library, but some functions are only in
    the static library, so try that secondarily.  */
@@ -516,16 +532,14 @@ GROUP ( libpthread.so.0 libpthread_nonshared.a )
 EOF
 
 #--
-mv %{build_sysroot}%{prefix}/lib/armv4t/libc.so{,.orig}
-cat > %{build_sysroot}%{prefix}/lib/armv4t/libc.so << EOF
+cat > %{sysroot}%{prefix}/lib/armv4t/libc.so << EOF
 /* GNU ld script
    Use the shared library, but some functions are only in
    the static library, so try that secondarily.  */
 OUTPUT_FORMAT(elf32-littlearm)
 GROUP ( libc.so.6 libc_nonshared.a  AS_NEEDED ( ../ld-linux.so.3 ) )
 EOF
-mv %{build_sysroot}%{prefix}/lib/armv4t/libpthread.so{,.orig}
-cat > %{build_sysroot}%{prefix}/lib/armv4t/libpthread.so << EOF
+cat > %{sysroot}%{prefix}/lib/armv4t/libpthread.so << EOF
 /* GNU ld script
    Use the shared library, but some functions are only in
    the static library, so try that secondarily.  */
@@ -534,16 +548,14 @@ GROUP ( libpthread.so.0 libpthread_nonshared.a )
 EOF
 
 #--
-mv %{build_sysroot}%{prefix}/lib/thumb2/libc.so{,.orig}
-cat > %{build_sysroot}%{prefix}/lib/thumb2/libc.so << EOF
+cat > %{sysroot}%{prefix}/lib/thumb2/libc.so << EOF
 /* GNU ld script
    Use the shared library, but some functions are only in
    the static library, so try that secondarily.  */
 OUTPUT_FORMAT(elf32-littlearm)
 GROUP ( libc.so.6 libc_nonshared.a  AS_NEEDED ( ../ld-linux.so.3 ) )
 EOF
-mv %{build_sysroot}%{prefix}/lib/thumb2/libpthread.so{,.orig}
-cat > %{build_sysroot}%{prefix}/lib/thumb2/libpthread.so << EOF
+cat > %{sysroot}%{prefix}/lib/thumb2/libpthread.so << EOF
 /* GNU ld script
    Use the shared library, but some functions are only in
    the static library, so try that secondarily.  */
@@ -574,8 +586,7 @@ pushd gcc-4.5-%{version}/build
 	--enable-shared						\
 	--enable-symvers=gnu					\
 	--enable-threads					\
-	--with-sysroot=%{prefix}				\
-	--with-build-sysroot=%{build_sysroot}			\
+	--with-build-sysroot=%{sysroot}				\
 	--with-bugurl=https://qa.mandriva.com			\
 	--with-arch=armv5te					\
 	--with-gnu-as						\
@@ -584,35 +595,23 @@ pushd gcc-4.5-%{version}/build
 	--target=%{target}
     for dir in armv4t thumb2; do
 	mkdir -p %{target}/$dir/libgcc
-	ln -sf %{build_sysroot}/%{prefix}/include %{target}/$dir/libgcc
+	ln -sf %{sysroot}/%{prefix}/include %{target}/$dir/libgcc
     done
     mkdir -p %{target}/libgcc
-    ln -sf %{build_sysroot}/%{prefix}/include %{target}/libgcc
-    make LDFLAGS_FOR_TARGET=--sysroot=%{build_sysroot}		\
-	CPPFLAGS_FOR_TARGET=--sysroot=%{build_sysroot}		\
-	build_tooldir=%{build_sysroot}%{prefix}
-    DESTDIR=%{build_sysroot} make install
-    mv -f %{build_sysroot}%{gccdir}/include-fixed/*.h		\
-	  %{build_sysroot}%{gccdir}/include
-    rm -fr %{build_sysroot}%{gccdir}/include-fixed
-    rm -fr %{build_sysroot}%{gccdir}/install-tools
+    ln -sf %{sysroot}/%{prefix}/include %{target}/libgcc
+    make LDFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	CPPFLAGS_FOR_TARGET=--sysroot=%{sysroot}		\
+	build_tooldir=%{sysroot}%{prefix}
+    DESTDIR=%{sysroot} make install
+    mv -f %{sysroot}%{gccdir}/include-fixed/*.h			\
+	  %{sysroot}%{gccdir}/include
+    rm -fr %{sysroot}%{gccdir}/include-fixed
+    rm -fr %{sysroot}%{gccdir}/install-tools
 popd
-
-# restore linker scripts
-#--
-mv -f %{build_sysroot}%{prefix}/lib/libc.so{.orig,}
-mv -f %{build_sysroot}%{prefix}/lib/libpthread.so{.orig,}
-#--
-mv -f %{build_sysroot}%{prefix}/lib/armv4t/libc.so{.orig,}
-mv -f %{build_sysroot}%{prefix}/lib/armv4t/libpthread.so{.orig,}
-#--
-mv -f %{build_sysroot}%{prefix}/lib/thumb2/libc.so{.orig,}
-mv -f %{build_sysroot}%{prefix}/lib/thumb2/libpthread.so{.orig,}
-
 
 #-----------------------------------------------------------------------
 %install
-cp -fpar %{build_sysroot}/* %{buildroot}
+cp -fpar %{sysroot}/* %{buildroot}
 
 # symlinks
 rm -f %{buildroot}%{_includedir}
