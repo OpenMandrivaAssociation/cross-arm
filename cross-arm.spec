@@ -1,15 +1,3 @@
-# functions with printf format attribute but with special parser and also
-# receiving non constant format strings
-%define		Werror_cflags			%{nil}
-
-# avoid failures when testing if compiler used to build gcc can generate
-# shared objects (regardless of unresolved symbols)
-%define		_disable_ld_no_undefined	1
-
-# avoid build failure due to configure built with different autoconf version
-%define		_disable_libtoolize		1
-
-#-----------------------------------------------------------------------
 %define		target		arm-none-linux-gnueabi
 %define		full_version	2010.09-50
 %define		prefix		%{_prefix}/%{target}
@@ -445,8 +433,6 @@ export CC="%{build_sysroot}%{_bindir}/%{target}-gcc -march=armv4t"
 pushd glibc-2.11-%{version}/build
     ../configure						\
 	--prefix=%{prefix}					\
-	--bindir=%{prefix}/bin/armv4t				\
-	--sbindir=%{prefix}/sbin/armv4t				\
 	--libdir=%{prefix}/lib/armv4t				\
 	--libexecdir=%{prefix}/lib/armv4t			\
 	--disable-nls						\
@@ -459,7 +445,7 @@ pushd glibc-2.11-%{version}/build
 	--host=%{target}					\
 	--target=%{target}
     make
-    DESTDIR=%{build_sysroot} make install
+    make install_root=%{build_sysroot} install
 popd
 #--
 rm -fr glibc-2.11-%{version}/build/*
@@ -467,8 +453,6 @@ export CC="%{build_sysroot}%{_bindir}/%{target}-gcc -mthumb -march=armv7-a"
 pushd glibc-2.11-%{version}/build
     ../configure						\
 	--prefix=%{prefix}					\
-	--bindir=%{prefix}/bin/thumb2				\
-	--sbindir=%{prefix}/sbin/thumb2				\
 	--libdir=%{prefix}/lib/thumb2				\
 	--libexecdir=%{prefix}/lib/thumb2			\
 	--disable-nls						\
@@ -481,7 +465,7 @@ pushd glibc-2.11-%{version}/build
 	--host=%{target}					\
 	--target=%{target}
     make
-    DESTDIR=%{build_sysroot} make install
+    make install_root=%{build_sysroot} install
 popd
 #--
 rm -fr glibc-2.11-%{version}/build/*
@@ -501,7 +485,7 @@ pushd glibc-2.11-%{version}/build
 	--host=%{target}					\
 	--target=%{target}
     make
-    DESTDIR=%{build_sysroot} make install
+    make install_root=%{build_sysroot} install
 popd
 unset CC
 
