@@ -747,6 +747,13 @@ rm -f %{buildroot}%{_libdir}/libiberty.a
 rm -fr %{buildroot}%{_infodir}
 rm -fr %{buildroot}%{_mandir}/man7
 
+rm -f %{buildroot}%{_bindir}/%{target}-c++
+ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{_bindir}/%{target}-c++
+rm -f %{buildroot}%{prefix}/bin/{c++,g++,gcc} %{buildroot}%{_bindir}/%{target}-c++
+ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/c++
+ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/g++
+ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/bin/gcc
+
 #-----------------------------------------------------------------------
 %clean
 rm -fr %{buildroot}
