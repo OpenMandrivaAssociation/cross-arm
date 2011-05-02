@@ -42,6 +42,7 @@ BuildRequires:	gmp-devel
 BuildRequires:	mpfr-devel
 BuildRequires:	libmpc-devel
 BuildRequires:	ncurses-devel
+BuildRequires:	readline-devel
 BuildRequires:	gettext
 BuildRequires:	texinfo
 BuildRequires:	texlive
