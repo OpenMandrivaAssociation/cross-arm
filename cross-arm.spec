@@ -1,9 +1,20 @@
+# NOTES
+#   It is not wise to mix host and target binaries. But, knowngly wrong,
+# kept so for now to simplify spec file.
+#   --with-sysroot is wrong/missing, but also, good enough for now as
+# it should be generating valid binaries, that will link with the proper
+# libc/libpthread/etc at run time.
+#   The package could be split for a default, armv4t and thumb2 packages,
+# and preferably providing glibc and anything else needed under a directory
+# structure that would allow nfs mount and chroot on it.
+
 %define		_requires_exceptions libc.so.6\\|libgcc_s.so.1
 
-%define		target		arm-none-linux-gnueabi
+%define		upstream	arm-none-linux-gnueabi
+%define		target		arm-mandriva-linux-gnueabi
 %define		full_version	2010.09-50
 %define		prefix		%{_prefix}/%{target}
-%define 	sysroot		%{_builddir}/arm-%{full_version}-%{target}/sysroot
+%define 	sysroot		%{_builddir}/arm-%{full_version}-%{upstream}/sysroot
 %define		gccdir		%{_libdir}/gcc/%{target}/4.5.1
 
 Name:		cross-arm
@@ -11,7 +22,7 @@ Release:	1
 Version:	2010.09
 License:	GPLv3+
 Group:		Development/Other
-Summary:	Sourcery G++ Lite for ARM GNU/Linux
+Summary:	ARM GNU/Linux cross toolchain based on Sourcery G++ Lite
 URL:		http://www.codesourcery.com/sgpp/lite/arm/
 # 841081740c155016364bcd979b5c06e9
 Source0:	http://www.codesourcery.com/sgpp/lite/arm/portal/package7850/public/arm-none-linux-gnueabi/arm-2010.09-50-arm-none-linux-gnueabi.src.tar.bz2
@@ -38,6 +49,7 @@ Requires:	cross-arm-binutils = %{version}-%{release}
 Requires:	cross-arm-gcc = %{version}-%{release}
 Requires:	cross-arm-c++ = %{version}-%{release}
 Requires:	cross-arm-glibc = %{version}-%{release}
+Requires:	cross-arm-gdb = %{version}-%{release}
 
 # backport minor change required by newer make
 Patch0:		cross-arm-glibc.patch
@@ -103,11 +115,11 @@ binutils Sourcery G++ Lite for ARM GNU/Linux.
 
 #-----------------------------------------------------------------------
 %package	gcc
-Summary:	gcc Sourcery G++ Lite for ARM GNU/Linux
+Summary:	gcc based on Sourcery G++ Lite for ARM GNU/Linux
 Requires:	cross-arm-binutils = %{version}-%{release}
 
 %description	gcc
-gcc Sourcery G++ Lite for ARM GNU/Linux.
+gcc based on Sourcery G++ Lite for ARM GNU/Linux.
 
 %files		gcc
 %defattr(-,root,root,-)
@@ -171,12 +183,12 @@ gcc Sourcery G++ Lite for ARM GNU/Linux.
 
 #-----------------------------------------------------------------------
 %package	c++
-Summary:	c++ Sourcery G++ Lite for ARM GNU/Linux
+Summary:	c++ based on Sourcery G++ Lite for ARM GNU/Linux
 Requires:	cross-arm-gcc = %{version}-%{release}
 Requires:	cross-arm-glibc = %{version}-%{release}
 
 %description	c++
-c++ Sourcery G++ Lite for ARM GNU/Linux.
+c++ based on Sourcery G++ Lite for ARM GNU/Linux.
 
 %files		c++
 %defattr(-,root,root,-)
@@ -198,14 +210,18 @@ c++ Sourcery G++ Lite for ARM GNU/Linux.
 
 #-----------------------------------------------------------------------
 %package	glibc
-Summary:	glibc Sourcery G++ Lite for ARM GNU/Linux
+Summary:	glibc based on Sourcery G++ Lite for ARM GNU/Linux
 Requires:	cross-arm-gcc = %{version}-%{release}
 
 %description	glibc
-glibc Sourcery G++ Lite for ARM GNU/Linux.
+glibc based on Sourcery G++ Lite for ARM GNU/Linux.
 
 %files		glibc
 %defattr(-,root,root,-)
+%{prefix}/bin/armv4t
+%exclude %{prefix}/bin/armv4t/gdbserver
+%{prefix}/bin/thumb2
+%exclude %{prefix}/bin/thumb2/gdbserver
 %{prefix}/bin/catchsegv
 %{prefix}/bin/gencat
 %{prefix}/bin/getconf
@@ -241,8 +257,26 @@ glibc Sourcery G++ Lite for ARM GNU/Linux.
 %exclude %{prefix}/share/gcc*
 
 #-----------------------------------------------------------------------
+%package	gdb
+Summary:	gdb based on Sourcery G++ Lite for ARM GNU/Linux
+Requires:	cross-arm-glibc = %{version}-%{release}
+
+%description	gdb
+gdb based on Sourcery G++ Lite for ARM GNU/Linux.
+
+%files		gdb
+%defattr(-,root,root,-)
+%{_bindir}/%{target}-gdb
+%{_bindir}/%{target}-gdbtui
+%{_mandir}/man1/%{target}-gdb.1*
+%{_mandir}/man1/%{target}-gdbtui.1*
+%{prefix}/bin/gdbserver
+%{prefix}/bin/armv4t/gdbserver
+%{prefix}/bin/thumb2/gdbserver
+
+#-----------------------------------------------------------------------
 %prep
-%setup -q -n arm-%{full_version}-%{target}
+%setup -q -n arm-%{full_version}-%{upstream}
 tar jxf binutils-%{full_version}.tar.bz2
 mkdir -p binutils-%{version}/build
 tar jxf linux-%{full_version}.tar.bz2
@@ -253,6 +287,9 @@ mkdir -p glibc-2.11-%{version}/ports
 cp -far glibc-ports-2.11-%{version}/* glibc-2.11-%{version}/ports
 tar jxf gcc-%{full_version}.tar.bz2
 mkdir -p gcc-4.5-%{version}/build
+tar jxf gdb-%{full_version}.tar.bz2
+mkdir -p gdb-%{version}/build
+mkdir -p gdb-%{version}/gdb/gdbserver/build
 
 %patch0 -p1
 
@@ -463,7 +500,12 @@ pushd glibc-2.11-%{version}/build
 	--host=%{target}					\
 	--target=%{target}
     make
-    make install_root=%{sysroot} install
+    make install_root=%{sysroot}				\
+	bindir=%{prefix}/bin/armv4t				\
+	sbindir=%{prefix}/sbin/armv4t				\
+	libdir=%{prefix}/lib/armv4t				\
+	libexecdir=%{prefix}/lib/armv4t				\
+	install
 popd
 #--
 rm -fr glibc-2.11-%{version}/build/*
@@ -483,7 +525,12 @@ pushd glibc-2.11-%{version}/build
 	--host=%{target}					\
 	--target=%{target}
     make
-    make install_root=%{sysroot} install
+    make install_root=%{sysroot}				\
+	bindir=%{prefix}/bin/thumb2				\
+	sbindir=%{prefix}/sbin/thumb2				\
+	libdir=%{prefix}/lib/thumb2				\
+	libexecdir=%{prefix}/lib/thumb2				\
+	install
 popd
 #--
 rm -fr glibc-2.11-%{version}/build/*
@@ -608,6 +655,74 @@ pushd gcc-4.5-%{version}/build
     rm -fr %{sysroot}%{gccdir}/include-fixed
     rm -fr %{sysroot}%{gccdir}/install-tools
 popd
+
+# gdb
+rm -fr gdb-%{version}/build/*
+pushd gdb-%{version}/build
+    ../configure						\
+	--prefix=%{_prefix}					\
+	--disable-nls						\
+	--disable-sim						\
+	--with-bugurl=https://qa.mandriva.com			\
+	--with-build-time-tools=%{sysroot}%{prefix}/bin		\
+	--with-build-sysroot=%{sysroot}				\
+	--with-gdb-datadir=%{prefix}/share/gdb			\
+	--with-system-gdbinit=%{prefix}/lib/gdbinit		\
+	--target=%{target}
+    make
+    DESTDIR=%{sysroot} make libdir=%{_libdir} libexecir=%{_libdir} install
+popd
+
+# gdbserver
+rm -fr gdb-%{version}/gdb/gdbserver/build/*
+export CC="%{sysroot}%{_bindir}/%{target}-gcc -march=armv4t"
+pushd gdb-%{version}/gdb/gdbserver/build
+    ../configure						\
+	--prefix=%{prefix}					\
+	--bindir=%{prefix}/bin/armv4t				\
+	--sbindir=%{prefix}/sbin/armv4t				\
+	--libdir=%{prefix}/lib/armv4t				\
+	--libexecdir=%{prefix}/lib/armv4t			\
+	--disable-shared					\
+	--disable-sim						\
+	--with-bugurl=https://qa.mandriva.com			\
+	--host=%{target}
+    make
+    DESTDIR=%{sysroot} make install
+popd
+#--
+rm -fr gdb-%{version}/gdb/gdbserver/build/*
+export CC="%{sysroot}%{_bindir}/%{target}-gcc -mthumb -march=armv7-a"
+pushd gdb-%{version}/gdb/gdbserver/build
+    ../configure						\
+	--prefix=%{prefix}					\
+	--bindir=%{prefix}/bin/thumb2				\
+	--sbindir=%{prefix}/sbin/thumb2				\
+	--libdir=%{prefix}/lib/thumb2				\
+	--libexecdir=%{prefix}/lib/thumb2			\
+	--disable-shared					\
+	--disable-sim						\
+	--with-bugurl=https://qa.mandriva.com			\
+	--host=%{target}
+    make
+    DESTDIR=%{sysroot} make install
+popd
+#--
+rm -fr gdb-%{version}/gdb/gdbserver/build/*
+export CC="%{sysroot}%{_bindir}/%{target}-gcc"
+pushd gdb-%{version}/gdb/gdbserver/build
+    ../configure						\
+	--prefix=%{prefix}					\
+	--libdir=%{prefix}/lib					\
+	--libexecdir=%{prefix}/lib				\
+	--disable-shared					\
+	--disable-sim						\
+	--with-bugurl=https://qa.mandriva.com			\
+	--host=%{target}
+    make
+    DESTDIR=%{sysroot} make install
+popd
+unset CC
 
 #-----------------------------------------------------------------------
 %install
