@@ -101,6 +101,7 @@ binutils Sourcery G++ Lite for ARM GNU/Linux.
 %{_mandir}/man1/%{target}-size.1*
 %{_mandir}/man1/%{target}-strings.1*
 %{_mandir}/man1/%{target}-strip.1*
+%dir %{prefix}
 %dir %{prefix}/bin
 %dir %{prefix}/lib
 %{prefix}/bin/ar
@@ -255,6 +256,7 @@ glibc based on Sourcery G++ Lite for ARM GNU/Linux.
 %{prefix}/sbin
 %{prefix}/share
 %exclude %{prefix}/share/gcc*
+%exclude %{prefix}/share/gdb
 
 #-----------------------------------------------------------------------
 %package	gdb
@@ -273,6 +275,7 @@ gdb based on Sourcery G++ Lite for ARM GNU/Linux.
 %{prefix}/bin/gdbserver
 %{prefix}/bin/armv4t/gdbserver
 %{prefix}/bin/thumb2/gdbserver
+%{prefix}/share/gdb
 
 #-----------------------------------------------------------------------
 %prep
