@@ -41,9 +41,11 @@ BuildRequires:	gcc
 BuildRequires:	gmp-devel
 BuildRequires:	mpfr-devel
 BuildRequires:	libmpc-devel
+BuildRequires:	ncurses-devel
 BuildRequires:	gettext
 BuildRequires:	texinfo
 BuildRequires:	texlive
+BuildRequires:	zlib-devel
 
 Requires:	cross-arm-binutils = %{version}-%{release}
 Requires:	cross-arm-gcc = %{version}-%{release}
