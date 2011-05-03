@@ -57,6 +57,8 @@ Requires:	cross-arm-gdb = %{version}-%{release}
 # backport minor change required by newer make
 Patch0:		cross-arm-glibc.patch
 
+Patch1:		cross-arm-gdb.patch
+
 %description
 Sourcery G++ Lite for ARM GNU/Linux is intended for developers working on
 embedded GNU/Linux applications. It may also be used for Linux kernel
@@ -298,6 +300,7 @@ mkdir -p gdb-%{version}/build
 mkdir -p gdb-%{version}/gdb/gdbserver/build
 
 %patch0 -p1
+%patch1 -p1
 
 #-----------------------------------------------------------------------
 %build
@@ -366,6 +369,7 @@ pushd gcc-4.5-%{version}/build
 	--disable-libssp					\
 	--disable-libstdcxx-pch					\
 	--disable-libunwind-exceptions				\
+	--disable-plugin					\
 	--enable-__cxa_atexit					\
 	--enable-extra-sgxxlite-multilibs			\
 	--enable-languages="c"					\
@@ -456,6 +460,7 @@ pushd gcc-4.5-%{version}/build
 	--disable-libssp					\
 	--disable-libstdcxx-pch					\
 	--disable-libunwind-exceptions				\
+	--disable-plugin					\
 	--enable-__cxa_atexit					\
 	--enable-extra-sgxxlite-multilibs			\
 	--enable-languages="c"					\
@@ -560,13 +565,6 @@ pushd glibc-2.11-%{version}/build
 popd
 unset CC
 
-for dir in lib include; do
-    [ -d %{sysroot}%{_prefix}/$dir ] &&
-	rm -fr %{sysroot}%{_prefix}/$dir
-    [ -e %{sysroot}%{_prefix}/$dir ] ||
-	ln -sf %{sysroot}%{prefix}/$dir %{sysroot}%{_prefix}/$dir
-done
-
 # Rewrite linker scripts to use relative paths
 #--
 cat > %{sysroot}%{prefix}/lib/libc.so << EOF
@@ -631,6 +629,7 @@ pushd gcc-4.5-%{version}/build
 	--disable-libssp					\
 	--disable-libstdcxx-pch					\
 	--disable-libunwind-exceptions				\
+	--disable-plugin					\
 	--enable-__cxa_atexit					\
 	--enable-extra-sgxxlite-multilibs			\
 	--enable-languages="c,c++"				\
@@ -684,49 +683,35 @@ rm -fr gdb-%{version}/gdb/gdbserver/build/*
 export CC="%{sysroot}%{_bindir}/%{target}-gcc -march=armv4t"
 pushd gdb-%{version}/gdb/gdbserver/build
     ../configure						\
-	--prefix=%{prefix}					\
-	--bindir=%{prefix}/bin/armv4t				\
-	--sbindir=%{prefix}/sbin/armv4t				\
-	--libdir=%{prefix}/lib/armv4t				\
-	--libexecdir=%{prefix}/lib/armv4t			\
-	--disable-shared					\
-	--disable-sim						\
+	--prefix=%{_prefix}					\
+	--bindir=%{_bindir}/armv4t				\
 	--with-bugurl=https://qa.mandriva.com			\
 	--host=%{target}
     make
-    DESTDIR=%{sysroot} make install
+    DESTDIR=%{sysroot} make bindir=%{prefix}/bin/armv4t install
 popd
 #--
 rm -fr gdb-%{version}/gdb/gdbserver/build/*
 export CC="%{sysroot}%{_bindir}/%{target}-gcc -mthumb -march=armv7-a"
 pushd gdb-%{version}/gdb/gdbserver/build
     ../configure						\
-	--prefix=%{prefix}					\
-	--bindir=%{prefix}/bin/thumb2				\
-	--sbindir=%{prefix}/sbin/thumb2				\
-	--libdir=%{prefix}/lib/thumb2				\
-	--libexecdir=%{prefix}/lib/thumb2			\
-	--disable-shared					\
-	--disable-sim						\
+	--prefix=%{_prefix}					\
+	--bindir=%{_bindir}/thumb2				\
 	--with-bugurl=https://qa.mandriva.com			\
 	--host=%{target}
     make
-    DESTDIR=%{sysroot} make install
+    DESTDIR=%{sysroot} make bindir=%{prefix}/bin/thumb2 install
 popd
 #--
 rm -fr gdb-%{version}/gdb/gdbserver/build/*
 export CC="%{sysroot}%{_bindir}/%{target}-gcc"
 pushd gdb-%{version}/gdb/gdbserver/build
     ../configure						\
-	--prefix=%{prefix}					\
-	--libdir=%{prefix}/lib					\
-	--libexecdir=%{prefix}/lib				\
-	--disable-shared					\
-	--disable-sim						\
+	--prefix=%{_prefix}					\
 	--with-bugurl=https://qa.mandriva.com			\
 	--host=%{target}
     make
-    DESTDIR=%{sysroot} make install
+    DESTDIR=%{sysroot} make bindir=%{prefix}/bin install
 popd
 unset CC
 
@@ -734,22 +719,19 @@ unset CC
 %install
 cp -fpar %{sysroot}/* %{buildroot}
 
-# symlinks
-rm -f %{buildroot}%{_includedir}
-%ifarch x86_64
-rm -f %{buildroot}%{_prefix}/lib
-%endif
-rm %{buildroot}%{prefix}/bin/include
-rm %{buildroot}%{prefix}/bin/lib
+rm -f %{buildroot}%{prefix}/bin/include
+rm -f %{buildroot}%{prefix}/bin/lib
 
 # already on system tools
 rm -f %{buildroot}%{_libdir}/libiberty.a
 rm -fr %{buildroot}%{_infodir}
 rm -fr %{buildroot}%{_mandir}/man7
 
+rm -f %{buildroot}%{_mandir}/man1/gdbserver.1*
+
 rm -f %{buildroot}%{_bindir}/%{target}-c++
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{_bindir}/%{target}-c++
-rm -f %{buildroot}%{prefix}/bin/{c++,g++,gcc} %{buildroot}%{_bindir}/%{target}-c++
+rm -f %{buildroot}%{prefix}/bin/{c++,g++,gcc}
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/c++
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/g++
 ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/bin/gcc
