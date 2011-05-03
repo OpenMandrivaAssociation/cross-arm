@@ -69,10 +69,10 @@ development and debugging, or to build a GNU/Linux distribution.
 
 #-----------------------------------------------------------------------
 %package	binutils
-Summary:	binutils Sourcery G++ Lite for ARM GNU/Linux
+Summary:	binutils based on Sourcery G++ Lite for ARM GNU/Linux
 
 %description	binutils
-binutils Sourcery G++ Lite for ARM GNU/Linux.
+binutils based on Sourcery G++ Lite for ARM GNU/Linux.
 
 %files		binutils
 %defattr(-,root,root,-)
