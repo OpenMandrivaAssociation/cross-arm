@@ -675,7 +675,7 @@ pushd gdb-%{version}/build
 	--with-system-gdbinit=%{prefix}/lib/gdbinit		\
 	--target=%{target}
     make
-    DESTDIR=%{sysroot} make libdir=%{_libdir} libexecir=%{_libdir} install
+    DESTDIR=%{sysroot} make install
 popd
 
 # gdbserver
