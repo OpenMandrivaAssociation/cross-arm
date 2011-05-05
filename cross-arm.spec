@@ -1,3 +1,6 @@
+%define		_enable_debug_packages	%{nil}
+%define		debug_package		%{nil}
+
 %define		_requires_exceptions libc.so.6\\|libgcc_s.so.1
 
 %define		upstream	arm-none-linux-gnueabi
@@ -256,14 +259,14 @@ tar jxf binutils-%{full_version}.tar.bz2
 mkdir -p binutils-%{version}/build
 tar jxf linux-%{full_version}.tar.bz2
 tar jxf glibc-%{full_version}.tar.bz2
-mkdir -p glibc-2.11-%{version}/build
+mkdir -p glibc-2.11-%{version}/{build,build-armv4t,build-thumb2,ports}
 tar jxf glibc_ports-%{full_version}.tar.bz2
-mkdir -p glibc-2.11-%{version}/ports
 cp -far glibc-ports-2.11-%{version}/* glibc-2.11-%{version}/ports
 tar jxf gcc-%{full_version}.tar.bz2
 mkdir -p gcc-4.5-%{version}/build
 tar jxf gdb-%{full_version}.tar.bz2
 mkdir -p gdb-%{version}/build
+mkdir -p gdb-%{version}/gdb/gdbserver/{build,build-armv4t,build-thumb2}
 
 %patch0 -p1
 %patch1 -p1
@@ -351,24 +354,14 @@ pushd gcc-4.5-%{version}/build
 	--with-newlib						\
 	--without-headers					\
 	--target=%{target}
-    for dir in armv4t thumb2; do
-	mkdir -p %{target}/$dir/libgcc
-	ln -sf %{build_root}/%{sysroot}%{_includedir} %{target}/$dir/libgcc
-    done
-    mkdir -p %{target}/libgcc
-    ln -sf %{build_root}/%{sysroot}%{_includedir} %{target}/libgcc
     %make LDFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
 	 CPPFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
 	 build_tooldir=%{build_root}%{sysroot}
     DESTDIR=%{build_root} %make install
-    mv -f %{build_root}%{gccdir}/include-fixed/*.h		\
-	  %{build_root}%{gccdir}/include
-    rm -fr %{build_root}%{gccdir}/include-fixed
 popd
 
 # glibc(2) install proper headers and fake multilib libc.so
 mkdir -p %{build_root}%{sysroot}{,/armv4t,/thumb2}%{_prefix}/lib
-mkdir -p glibc-2.11-%{version}/build
 rm -fr glibc-2.11-%{version}/build/*
 export CC=%{build_root}%{_bindir}/%{target}-gcc
 pushd glibc-2.11-%{version}/build
@@ -445,24 +438,13 @@ pushd gcc-4.5-%{version}/build
 	--with-newlib						\
 	--without-headers					\
 	--target=%{target}
-    for dir in armv4t thumb2; do
-	mkdir -p %{target}/$dir/libgcc
-	ln -sf %{build_root}/%{sysroot}%{_includedir} %{target}/$dir/libgcc
-    done
-    mkdir -p %{target}/libgcc
-    ln -sf %{build_root}/%{sysroot}%{_includedir} %{target}/libgcc
     %make LDFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
 	 CPPFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
 	 build_tooldir=%{build_root}%{sysroot}
     DESTDIR=%{build_root} %make install
-    mv -f %{build_root}%{gccdir}/include-fixed/*.h		\
-	  %{build_root}%{gccdir}/include
-    rm -fr %{build_root}%{gccdir}/include-fixed
-    rm -fr %{build_root}%{gccdir}/install-tools
 popd
 
 # glibc(3) build all default targets
-mkdir -p glibc-2.11-%{version}/build-armv4t
 rm -fr glibc-2.11-%{version}/build-armv4t/*
 export CC="%{build_root}%{_bindir}/%{target}-gcc -march=armv4t"
 pushd glibc-2.11-%{version}/build-armv4t
@@ -483,7 +465,6 @@ pushd glibc-2.11-%{version}/build-armv4t
     %make install_root=%{build_root}%{sysroot}/armv4t install
 popd
 #--
-mkdir -p glibc-2.11-%{version}/build-thumb2
 rm -fr glibc-2.11-%{version}/build-thumb2/*
 export CC="%{build_root}%{_bindir}/%{target}-gcc -mthumb -march=armv7-a"
 pushd glibc-2.11-%{version}/build-thumb2
@@ -504,7 +485,6 @@ pushd glibc-2.11-%{version}/build-thumb2
     %make install_root=%{build_root}%{sysroot}/thumb2 install
 popd
 #--
-mkdir -p glibc-2.11-%{version}/build
 rm -fr glibc-2.11-%{version}/build/*
 export CC=%{build_root}%{_bindir}/%{target}-gcc
 pushd glibc-2.11-%{version}/build
@@ -559,12 +539,6 @@ pushd gcc-4.5-%{version}/build
 	--with-gnu-ld						\
 	--without-headers					\
 	--target=%{target}
-    for dir in armv4t thumb2; do
-	mkdir -p %{target}/$dir/libgcc
-	ln -sf %{build_root}/%{sysroot}%{_includedir} %{target}/$dir/libgcc
-    done
-    mkdir -p %{target}/libgcc
-    ln -sf %{build_root}/%{sysroot}%{_includedir} %{target}/libgcc
     %make LDFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
 	CPPFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
 	build_tooldir=%{build_root}%{sysroot}
