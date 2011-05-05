@@ -622,8 +622,6 @@ ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/c++
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/g++
 ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/bin/gcc
 
-ln -sf %{prefix}/include/c++ %{buildroot}%{sysroot}%{_includedir}
-
 rm -fr %{buildroot}%{sysroot}/armv4t%{_includedir}
 ln -sf %{sysroot}%{_includedir} %{buildroot}%{sysroot}/armv4t%{_includedir}
 rm -fr %{buildroot}%{sysroot}/thumb2%{_includedir}
@@ -639,6 +637,12 @@ pushd %{buildroot}%{prefix}/lib
     mv -f thumb2/* %{buildroot}%{sysroot}/thumb2%{_prefix}/lib
     rmdir armv4t thumb2
 popd
+
+%if 0
+chmod 4755 %{buildroot}{,/armv4t,/thumb2}%{sysroot}%{_prefix}/pt_chown
+%else
+rm -f %{buildroot}{,/armv4t,/thumb2}%{sysroot}%{_prefix}/pt_chown
+%endif
 
 #-----------------------------------------------------------------------
 %clean
