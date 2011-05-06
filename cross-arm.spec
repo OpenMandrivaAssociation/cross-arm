@@ -644,6 +644,10 @@ chmod 4755 %{buildroot}{,/armv4t,/thumb2}%{sysroot}%{_prefix}/pt_chown
 rm -f %{buildroot}{,/armv4t,/thumb2}%{sysroot}%{_prefix}/pt_chown
 %endif
 
+# maybe should actually not install these
+perl -pi -e 's|libdir=/usr/%{_target}/lib|libdir=/usr/lib|;'	\
+	%{buildroot}%{sysroot}%{_prefix}/lib/*.la
+
 #-----------------------------------------------------------------------
 %clean
 rm -fr %{buildroot}
