@@ -1,30 +1,75 @@
+# croos-arm package initially based on codesourcery now coverted on
+# basically a stage1 of the DJ Delorie arm bootstrap scripts at
+# http://fedorapeople.org/~djdelorie/
+# adapted for the mandriva arm bootstrap setup
+
 %define		_enable_debug_packages	%{nil}
 %define		debug_package		%{nil}
+%define		__find_provides		%{SOURCE10}
+%define		__find_requires		%{SOURCE10}
 
-%define		_requires_exceptions libc.so.6\\|libgcc_s.so.1
+%define		arch			arm
+%define		target			armv7l-mandriva-linux-gnueabi
+%define		prefix			%{_prefix}/%{target}
+%define		sysroot			%{prefix}/sysroot
+%define 	build_root		%{_builddir}/%{arch}-cross/root
+%define		cross_libdir		%{_prefix}/lib
+%define		cross_configure		./configure --prefix=%{_prefix} --exec-prefix=%{_prefix} --bindir=%{_bindir} --sbindir=%{_sbindir} --sysconfdir=%{_sysconfdir} --datadir=%{_datadir} --includedir=%{_includedir} --libdir=%{cross_libdir} --libexecdir=%{cross_libdir} --localstatedir=%{_localstatedir} --sharedstatedir=%{_sharedstatedir} --mandir=%{_mandir} --infodir=%{_infodir}
+%define		__cross_configure	../%{cross_configure}
+%define		build_config		--disable-werror --with-build-sysroot=%{build_root}%{sysroot}
+%define		target_config		--with-cpu=cortex-a8 --with-tune=cortex-a8 --with-arch=armv7-a --with-mode=thumb --with-float=softfp --with-fpu=vfpv3-d16 --with-abi=aapcs-linux --with-sysroot=%{sysroot} --target=%{target}
 
-%define		upstream	arm-none-linux-gnueabi
-%define		target		arm-mandriva-linux-gnueabi
-%define		full_version	2010.09-50
-%define		prefix		%{_prefix}/%{target}
-%define		sysroot		%{prefix}/sysroot
-%define 	build_root	%{_builddir}/arm-%{full_version}-%{upstream}/root
-%define		gccdir		%{prefix}/lib/gcc/%{target}/4.5.1
+%define		gcc_version		4.6.1
+%define		linux_cross		linux-2.6.38
+%define		binutils_cross		binutils-2.22.51
+%define		cross_gcc		gcc-4.6-20111007
+%define		cross_glibc		glibc-2.14-121-g5551a7b
+%define		cross_gdb		gdb-7.1
+
+%define 	build_root		%{_builddir}/cross-%{arch}/root
+%define		gccdir			%{prefix}/lib/gcc/%{target}/4.6.1
 
 Name:		cross-arm
-Release:	2
-Version:	2010.09
+Release:	1
+Version:	2011.10
 License:	GPLv3+
 Group:		Development/Other
-Summary:	ARM GNU/Linux cross toolchain based on Sourcery G++ Lite
-URL:		http://www.codesourcery.com/sgpp/lite/arm/
-# 841081740c155016364bcd979b5c06e9
-Source0:	http://www.codesourcery.com/sgpp/lite/arm/portal/package7850/public/arm-none-linux-gnueabi/arm-2010.09-50-arm-none-linux-gnueabi.src.tar.bz2
-Source1:	http://www.codesourcery.com/sgpp/lite/arm/portal/doc9947/getting-started.pdf
+Summary:	ARM GNU/Linux cross toolchain
+URL:		http://fedorapeople.org/~djdelorie/
+
+# revision: 677434
+# repsys co kernel; cd kernel; ./build_sources
+# mv SOURCES/linux-2.6.38.tar.bz2
+Source0:	%{linux_cross}.tar.bz2
+
+# revision: 703525
+# repsys co binutils
+# rpmbuild -bp --define "_topdir `pwd`" --define "_target_cpu arm" SPECS/binutils.spec
+# cd BUILD; tar jcf binutils-2.22.51.tar.bz2 binutils-2.22.51; mv binutils-2.22.51.tar.bz2 ../../cross-arm/SOURCES
+Source1:	%{binutils_cross}.tar.bz2
+
+# revision: 703958
+# repsys co gcc
+# rpmbuild -bp --define "_topdir `pwd`" --define "_target_cpu armv7l" SPECS/gcc.spec
+# cd BUILD; tar jcf gcc-4.6-20111007.tar.bz2 gcc-4.6-20111007; mv gcc-4.6-20111007.tar.bz2 ../../cross-arm/SOURCES
+Source2:	%{cross_gcc}.tar.bz2
+
+# revision: 702438
+# repsys co glibc
+# rpmbuild -bp --define "_topdir `pwd`" --define "_target_cpu arm" SPECS/glibc.spec
+# cd BUILD; tar jcf glibc-2.14-121-g5551a7b.tar.bz2 glibc-2.14-121-g5551a7b; mv glibc-2.14-121-g5551a7b.tar.bz2 ../../cross-arm/SOURCES
+Source3:	%{cross_glibc}.tar.bz2
+
+# revision: 682884
+# repsys co gdb
+# rpmbuild -bp --define "_topdir `pwd`" --define "_target_cpu arm" SPECS/gdb.spec
+# cd BUILD; tar jcf gdb-7.1.bz2 gdb-7.1; mv gdb-7.1.tar.bz2 ../../cross-arm/SOURCES
+Source4:	%{cross_gdb}.tar.bz2
+
+Source10:	find-nothing
+
 Buildroot:	%{_tmppath}/%{name}-%{version}-root
 
-# For now, on purpose building with newer gmp, mpfr, mpc and libelf,
-# instead of the certified versions
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	binutils-devel
@@ -42,31 +87,26 @@ BuildRequires:	texinfo
 BuildRequires:	texlive
 BuildRequires:	zlib-devel
 
-Requires:	cross-arm-binutils = %{version}-%{release}
-Requires:	cross-arm-gcc = %{version}-%{release}
-Requires:	cross-arm-c++ = %{version}-%{release}
-Requires:	cross-arm-glibc = %{version}-%{release}
-Requires:	cross-arm-gdb = %{version}-%{release}
+Requires:	cross-%{arch}-binutils = %{EVRD}
+Requires:	cross-%{arch}-gcc = %{EVRD}
+Requires:	cross-%{arch}-c++ = %{EVRD}
+Requires:	cross-%{arch}-glibc = %{EVRD}
+Requires:	cross-%{arch}-gdb = %{EVRD}
 
-# backport minor change required by newer make
-Patch0:		cross-arm-glibc.patch
-
-Patch1:		cross-arm-gdb.patch
+Patch0:		cross-arm-gdb.patch
 
 %description
-Sourcery G++ Lite for ARM GNU/Linux is intended for developers working on
-embedded GNU/Linux applications. It may also be used for Linux kernel
-development and debugging, or to build a GNU/Linux distribution.
+%{summary}.
 
 %files
 %defattr(-,root,root,-)
 
 #-----------------------------------------------------------------------
 %package	binutils
-Summary:	binutils based on Sourcery G++ Lite for ARM GNU/Linux
+Summary:	ARM GNU/Linux cross toolchain binutils
 
 %description	binutils
-binutils based on Sourcery G++ Lite for ARM GNU/Linux.
+%{summary}.
 
 %files		binutils
 %defattr(-,root,root,-)
@@ -77,6 +117,7 @@ binutils based on Sourcery G++ Lite for ARM GNU/Linux.
 %{_bindir}/%{target}-elfedit
 %{_bindir}/%{target}-gprof
 %{_bindir}/%{target}-ld
+%{_bindir}/%{target}-ld.bfd
 %{_bindir}/%{target}-nm
 %{_bindir}/%{target}-objcopy
 %{_bindir}/%{target}-objdump
@@ -85,26 +126,12 @@ binutils based on Sourcery G++ Lite for ARM GNU/Linux.
 %{_bindir}/%{target}-size
 %{_bindir}/%{target}-strings
 %{_bindir}/%{target}-strip
-%{_mandir}/man1/%{target}-addr2line.1*
-%{_mandir}/man1/%{target}-ar.1*
-%{_mandir}/man1/%{target}-as.1*
-%{_mandir}/man1/%{target}-c++filt.1*
-%{_mandir}/man1/%{target}-elfedit.1*
-%{_mandir}/man1/%{target}-gprof.1*
-%{_mandir}/man1/%{target}-ld.1*
-%{_mandir}/man1/%{target}-nm.1*
-%{_mandir}/man1/%{target}-objcopy.1*
-%{_mandir}/man1/%{target}-objdump.1*
-%{_mandir}/man1/%{target}-ranlib.1*
-%{_mandir}/man1/%{target}-readelf.1*
-%{_mandir}/man1/%{target}-size.1*
-%{_mandir}/man1/%{target}-strings.1*
-%{_mandir}/man1/%{target}-strip.1*
 %dir %{prefix}
 %dir %{prefix}/bin
 %{prefix}/bin/ar
 %{prefix}/bin/as
 %{prefix}/bin/ld
+%{prefix}/bin/ld.bfd
 %{prefix}/bin/nm
 %{prefix}/bin/objcopy
 %{prefix}/bin/objdump
@@ -115,23 +142,18 @@ binutils based on Sourcery G++ Lite for ARM GNU/Linux.
 
 #-----------------------------------------------------------------------
 %package	gcc
-Summary:	gcc based on Sourcery G++ Lite for ARM GNU/Linux
-Requires:	cross-arm-binutils = %{version}-%{release}
+Summary:	ARM GNU/Linux cross toolchain gcc
+Requires:	cross-%{arch}-binutils = %{EVRD}
 
 %description	gcc
-gcc based on Sourcery G++ Lite for ARM GNU/Linux.
+%{summary}.
 
 %files		gcc
 %defattr(-,root,root,-)
 %{_bindir}/%{target}-cpp
-%{_bindir}/%{target}-gcc
-%{_bindir}/%{target}-gcc-4.5.1
-%{_bindir}/%{target}-gccbug
+%{_bindir}/%{target}-gcc*
 %{_bindir}/%{target}-gcov
 %{prefix}/bin/gcc
-%{_mandir}/man1/%{target}-cpp.1*
-%{_mandir}/man1/%{target}-gcc.1*
-%{_mandir}/man1/%{target}-gcov.1*
 %dir %{gccdir}
 %{gccdir}/include
 %{gccdir}/cc1
@@ -146,23 +168,20 @@ gcc based on Sourcery G++ Lite for ARM GNU/Linux.
 %{gccdir}/libgcc.a
 %{gccdir}/libgcc_eh.a
 %{gccdir}/libgcov.a
+%{gccdir}/liblto_plugin.*
+%{gccdir}/plugin
 %dir %{sysroot}%{_prefix}/lib
 %{sysroot}%{_prefix}/lib/libgcc*
-%{gccdir}/armv4t
-%dir %{sysroot}/armv4t%{_prefix}/lib
-%{sysroot}/armv4t%{_prefix}/lib/libgcc*
-%{gccdir}/thumb2
-%dir %{sysroot}/thumb2%{_prefix}/lib
-%{sysroot}/thumb2%{_prefix}/lib/libgcc*
+%{sysroot}%{_prefix}/lib/libgomp*
+%{sysroot}%{_prefix}/lib/libmudf*
 
 #-----------------------------------------------------------------------
 %package	c++
-Summary:	c++ based on Sourcery G++ Lite for ARM GNU/Linux
-Requires:	cross-arm-gcc = %{version}-%{release}
-Requires:	cross-arm-glibc = %{version}-%{release}
+Summary:	ARM GNU/Linux cross toolchain c++
+Requires:	cross-%{arch}-gcc = %{EVRD}
 
 %description	c++
-c++ based on Sourcery G++ Lite for ARM GNU/Linux.
+%{summary}.
 
 %files		c++
 %defattr(-,root,root,-)
@@ -171,25 +190,18 @@ c++ based on Sourcery G++ Lite for ARM GNU/Linux.
 %{prefix}/bin/c++
 %{prefix}/bin/g++
 %{gccdir}/cc1plus
-%{_mandir}/man1/%{target}-g++.1*
 %{prefix}/include
 %{sysroot}%{_prefix}/lib/libstdc++*
 %{sysroot}%{_prefix}/lib/libsupc++*
-%{sysroot}%{_datadir}/gcc*
-%{sysroot}/armv4t%{_prefix}/lib/libstdc++*
-%{sysroot}/armv4t%{_prefix}/lib/libsupc++*
-%{sysroot}/armv4t%{_datadir}/gcc*
-%{sysroot}/thumb2%{_prefix}/lib/libstdc++*
-%{sysroot}/thumb2%{_prefix}/lib/libsupc++*
-%{sysroot}/thumb2%{_datadir}/gcc*
+%{sysroot}%{_datadir}/gcc-%{gcc_version}
 
 #-----------------------------------------------------------------------
 %package	glibc
-Summary:	glibc based on Sourcery G++ Lite for ARM GNU/Linux
-Requires:	cross-arm-gcc = %{version}-%{release}
+Summary:	ARM GNU/Linux cross toolchain binutils
+Requires:	cross-%{arch}-gcc = %{EVRD}
 
 %description	glibc
-glibc based on Sourcery G++ Lite for ARM GNU/Linux.
+%{summary}.
 
 %files		glibc
 %defattr(-,root,root,-)
@@ -200,348 +212,133 @@ glibc based on Sourcery G++ Lite for ARM GNU/Linux.
 %{sysroot}/lib
 %{sysroot}%{_prefix}/lib
 %exclude %{sysroot}%{_prefix}/lib/libgcc*
+%exclude %{sysroot}%{_prefix}/lib/libgomp*
+%exclude %{sysroot}%{_prefix}/lib/libmudf*
 %exclude %{sysroot}%{_prefix}/lib/libstdc++*
 %exclude %{sysroot}%{_prefix}/lib/libsupc++*
 %{sysroot}/sbin
 %{sysroot}%{_sbindir}
 %{sysroot}%{_datadir}
-%exclude %{sysroot}%{_datadir}/gcc*
-%{sysroot}/armv4t%{_bindir}
-%exclude %{sysroot}/armv4t%{_bindir}/gdbserver
-%{sysroot}/armv4t%{_sysconfdir}
-%{sysroot}/armv4t%{_includedir}
-%{sysroot}/armv4t/lib
-%{sysroot}/armv4t%{_prefix}/lib
-%exclude %{sysroot}/armv4t%{_prefix}/lib/libgcc*
-%exclude %{sysroot}/armv4t%{_prefix}/lib/libstdc++*
-%exclude %{sysroot}/armv4t%{_prefix}/lib/libsupc++*
-%{sysroot}/armv4t/sbin
-%{sysroot}/armv4t%{_sbindir}
-%{sysroot}/armv4t%{_datadir}
-%exclude %{sysroot}/armv4t%{_datadir}/gcc*
-%{sysroot}/thumb2%{_bindir}
-%exclude %{sysroot}/thumb2%{_bindir}/gdbserver
-%{sysroot}/thumb2%{_sysconfdir}
-%{sysroot}/thumb2%{_includedir}
-%{sysroot}/thumb2/lib
-%{sysroot}/thumb2%{_prefix}/lib
-%exclude %{sysroot}/thumb2%{_prefix}/lib/libgcc*
-%exclude %{sysroot}/thumb2%{_prefix}/lib/libstdc++*
-%exclude %{sysroot}/thumb2%{_prefix}/lib/libsupc++*
-%{sysroot}/thumb2/sbin
-%{sysroot}/thumb2%{_sbindir}
-%{sysroot}/thumb2%{_datadir}
-%exclude %{sysroot}/thumb2%{_datadir}/gcc*
+%exclude %{sysroot}%{_datadir}/gcc-%{gcc_version}
+%{sysroot}%{_localstatedir}/db
 
 #-----------------------------------------------------------------------
 %package	gdb
-Summary:	gdb based on Sourcery G++ Lite for ARM GNU/Linux
-Requires:	cross-arm-glibc = %{version}-%{release}
+Summary:	ARM GNU/Linux cross toolchain gdb
+Requires:	cross-%{arch}-glibc = %{EVRD}
 
 %description	gdb
-gdb based on Sourcery G++ Lite for ARM GNU/Linux.
+%{summary}
 
 %files		gdb
 %defattr(-,root,root,-)
 %{_bindir}/%{target}-gdb
 %{_bindir}/%{target}-gdbtui
-%{_mandir}/man1/%{target}-gdb.1*
-%{_mandir}/man1/%{target}-gdbtui.1*
+%{_bindir}/%{target}-gstack
 %{prefix}/share/gdb
 %{sysroot}%{_bindir}/gdbserver
-%{sysroot}/armv4t%{_bindir}/gdbserver
-%{sysroot}/thumb2%{_bindir}/gdbserver
 
 #-----------------------------------------------------------------------
 %prep
-%setup -q -n arm-%{full_version}-%{upstream}
-tar jxf binutils-%{full_version}.tar.bz2
-mkdir -p binutils-%{version}/build
-tar jxf linux-%{full_version}.tar.bz2
-tar jxf glibc-%{full_version}.tar.bz2
-mkdir -p glibc-2.11-%{version}/{build,build-armv4t,build-thumb2,ports}
-tar jxf glibc_ports-%{full_version}.tar.bz2
-cp -far glibc-ports-2.11-%{version}/* glibc-2.11-%{version}/ports
-tar jxf gcc-%{full_version}.tar.bz2
-mkdir -p gcc-4.5-%{version}/build
-tar jxf gdb-%{full_version}.tar.bz2
-mkdir -p gdb-%{version}/build
-mkdir -p gdb-%{version}/gdb/gdbserver/{build,build-armv4t,build-thumb2}
+%setup -q -c -n cross-%{arch} -T -a 0 -a 1 -a 2 -a 3 -a 4
 
 %patch0 -p1
-%patch1 -p1
 
 #-----------------------------------------------------------------------
 %build
+unset CC CXX CFLAGS CXXFLAGS AR LD AS
 export PATH=%{build_root}%{_bindir}:$PATH
-
-# binutils
-rm -fr binutils-%{version}/build/*
-pushd binutils-%{version}/build
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--disable-nls						\
-	--disable-werror					\
-	--enable-poison-system-directories			\
-	--with-sysroot=%{sysroot}				\
-	--with-build-sysroot=%{build_root}%{sysroot}		\
-	--target=%{target}
-    %make
-    DESTDIR=%{build_root} %make install
-    rm -fr %{build_root}%{_infodir}
-    rm -fr %{build_root}%{_libdir}/libiberty.a
-    rm -f %{build_root}%{_mandir}/man1/%{target}-{dlltool,nlmconv,windmc,windres}.1*
-popd
+mkdir -p %{cross_glibc}/build
+mkdir -p %{cross_gcc}/build
 
 # kernel headers
-pushd linux-%{version}
-    %make ARCH=arm						\
+pushd %{linux_cross}
+    %make ARCH=%{arch}						\
 	INSTALL_HDR_PATH=%{build_root}%{sysroot}%{_prefix}	\
 	headers_install
 popd
 
-# glibc(1) install headers
-# this may install some --build headers but good enough to get going
-rm -fr glibc-2.11-%{version}/build/*
-pushd glibc-2.11-%{version}/build
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--disable-nls						\
-	--disable-profile					\
-	--enable-shared						\
-	--enable-kernel=2.6.16					\
-	--enable-add-ons					\
-	--without-gd						\
-	--with-headers=%{build_root}%{sysroot}%{_includedir}	\
-	--target=%{target}
-    %make install_root=%{build_root}%{sysroot}			\
-	install-bootstrap-headers=yes install-headers
-popd
-
-# gcc(1) build static and c only
-rm -fr gcc-4.5-%{version}/build/*
-pushd gcc-4.5-%{version}/build
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--libdir=%{prefix}/lib					\
-	--libexecdir=%{prefix}/lib				\
-	--disable-nls						\
-	--disable-decimal-float					\
-	--disable-shared					\
-	--disable-threads					\
-	--disable-libffi					\
-	--disable-libgcj					\
-	--disable-libgomp					\
-	--disable-libmudflap					\
-	--disable-libssp					\
-	--disable-libstdcxx-pch					\
-	--disable-libunwind-exceptions				\
-	--disable-plugin					\
-	--enable-__cxa_atexit					\
-	--enable-extra-sgxxlite-multilibs			\
-	--enable-languages="c"					\
-	--enable-poison-system-directories			\
-	--enable-threads					\
-	--enable-symvers=gnu					\
-	--with-sysroot=%{sysroot}				\
-	--with-build-sysroot=%{build_root}%{sysroot}		\
-	--with-build-time-tools=%{build_root}%{sysroot}/bin	\
-	--with-bugurl=https://qa.mandriva.com			\
-	--with-arch=armv5te					\
-	--with-system-zlib					\
-	--with-gnu-as						\
-	--with-gnu-ld						\
-	--with-newlib						\
-	--without-headers					\
-	--target=%{target}
-    %make LDFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
-	 CPPFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
-	 build_tooldir=%{build_root}%{sysroot}
+# binutils
+pushd %{binutils_cross}
+    %cross_configure						\
+	%{build_config}						\
+	%{target_config}
+    %make
     DESTDIR=%{build_root} %make install
 popd
 
-# glibc(2) install proper headers and fake multilib libc.so
-mkdir -p %{build_root}%{sysroot}{,/armv4t,/thumb2}%{_prefix}/lib
-rm -fr glibc-2.11-%{version}/build/*
-export CC=%{build_root}%{_bindir}/%{target}-gcc
-pushd glibc-2.11-%{version}/build
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--disable-nls						\
-	--disable-profile					\
-	--enable-shared						\
-	--enable-kernel=2.6.16					\
-	--enable-add-ons					\
-	--without-gd						\
-	--with-headers=%{build_root}%{sysroot}%{_includedir}	\
-	--host=%{target}					\
-	--target=%{target}
-    %make install_root=%{build_root}%{sysroot}			\
-	 install-bootstrap-headers=yes				\
-	 install-headers
-    %make csu/subdir_lib
-    #--
-    cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_root}%{sysroot}%{_prefix}/lib
-    %{build_root}%{_bindir}/%{target}-gcc			\
-	-o %{build_root}%{sysroot}%{_prefix}/lib/libc.so	\
-	-nostdlib -nostartfiles -shared -x c /dev/null
-    #--
-    cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_root}%{sysroot}/armv4t%{_prefix}/lib
-    %{build_root}%{_bindir}/%{target}-gcc -march=armv4t -o	\
-	%{build_root}%{sysroot}/armv4t%{_prefix}/lib/libc.so	\
-	-nostdlib -nostartfiles -shared -x c /dev/null
-    #--
-    cp csu/crt1.o csu/crti.o csu/crtn.o				\
-	%{build_root}%{sysroot}/thumb2%{_prefix}/lib
-    %{build_root}%{_bindir}/%{target}-gcc -mthumb		\
-	-march=armv7-a -o					\
-	%{build_root}%{sysroot}/thumb2%{_prefix}/lib/libc.so	\
-	-nostdlib -nostartfiles -shared -x c /dev/null
-popd
-unset CC
-
-# gcc(2) build dynamic and c only
-rm -fr gcc-4.5-%{version}/build/*
-pushd gcc-4.5-%{version}/build
-    ../configure						\
-	--prefix=%{_prefix}					\
+# gcc host
+mkdir -p %{cross_gcc}/build; pushd %{cross_gcc}/build
+    echo %{vendor} > ../gcc/DEV-PHASE
+    sed -i -e 's/4\.6\.2/4.6.1/' ../gcc/BASE-VER
+    %__cross_configure						\
+	%{build_config}						\
 	--libdir=%{prefix}/lib					\
 	--libexecdir=%{prefix}/lib				\
-	--disable-nls						\
-	--disable-decimal-float					\
-	--enable-shared						\
-	--disable-threads					\
-	--disable-libffi					\
-	--disable-libgcj					\
-	--disable-libgomp					\
-	--disable-libmudflap					\
+	--enable-languages=c,c++				\
 	--disable-libssp					\
-	--disable-libstdcxx-pch					\
-	--disable-libunwind-exceptions				\
-	--disable-plugin					\
-	--enable-__cxa_atexit					\
-	--enable-extra-sgxxlite-multilibs			\
-	--enable-languages="c"					\
-	--enable-poison-system-directories			\
-	--enable-threads					\
-	--enable-symvers=gnu					\
-	--with-sysroot=%{sysroot}				\
-	--with-build-sysroot=%{build_root}%{sysroot}		\
-	--with-build-time-tools=%{build_root}%{sysroot}/bin	\
-	--with-bugurl=https://qa.mandriva.com			\
-	--with-arch=armv5te					\
-	--with-system-zlib					\
-	--with-gnu-as						\
-	--with-gnu-ld						\
-	--with-newlib						\
-	--without-headers					\
-	--target=%{target}
-    %make LDFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
-	 CPPFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
-	 build_tooldir=%{build_root}%{sysroot}
-    DESTDIR=%{build_root} %make install
+	--with-headers=%{build_root}%{sysroot}%{_includedir}	\
+	%{target_config}
+    %make all-host
+    DESTDIR=%{build_root} %make install-host
 popd
 
-# glibc(3) build all default targets
-rm -fr glibc-2.11-%{version}/build-armv4t/*
-export CC="%{build_root}%{_bindir}/%{target}-gcc -march=armv4t"
-pushd glibc-2.11-%{version}/build-armv4t
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--libdir=%{_prefix}/lib					\
-	--libexecdir=%{_prefix}/lib				\
-	--disable-nls						\
-	--disable-profile					\
-	--enable-shared						\
-	--enable-kernel=2.6.16					\
-	--enable-add-ons					\
-	--without-gd						\
+# glibc headers
+pushd %{cross_glibc}/build
+    echo libc_cv_forced_unwind=yes > config.cache
+    echo libc_cv_c_cleanup=yes >> config.cache
+    echo libc_cv_ctors_header=no >> config.cache
+    %__cross_configure						\
+	%{build_config}						\
 	--with-headers=%{build_root}%{sysroot}%{_includedir}	\
-	--host=%{target}					\
-	--target=%{target}
-    %make
-    %make install_root=%{build_root}%{sysroot}/armv4t install
-popd
-#--
-rm -fr glibc-2.11-%{version}/build-thumb2/*
-export CC="%{build_root}%{_bindir}/%{target}-gcc -mthumb -march=armv7-a"
-pushd glibc-2.11-%{version}/build-thumb2
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--libdir=%{_prefix}/lib					\
-	--libexecdir=%{_prefix}/lib				\
-	--disable-nls						\
+	--enable-kernel=2.6.32					\
+	--enable-bind-now					\
+	--host %{target}					\
 	--disable-profile					\
-	--enable-shared						\
-	--enable-kernel=2.6.16					\
-	--enable-add-ons					\
+	--cache-file=config.cache				\
+	--without-cvs						\
+	--with-elf						\
 	--without-gd						\
-	--with-headers=%{build_root}%{sysroot}%{_includedir}	\
-	--host=%{target}					\
-	--target=%{target}
-    %make
-    %make install_root=%{build_root}%{sysroot}/thumb2 install
+	--enable-add-ons=ports,nptl				\
+	--disable-sanity-checks					\
+	--with-tls						\
+	--with-__thread						\
+	--host=%{target}
+    %make ARCH=%{arch} cross-compiling=yes install-headers install_root=%{build_root}%{sysroot}
+    touch %{build_root}%{sysroot}%{_includedir}/gnu/stubs.h
+    touch %{build_root}%{sysroot}/%{_includedir}/bits/stdio_lim.h
+    cp ../nptl/sysdeps/pthread/pthread.h %{build_root}%{_includedir}
+    pushd %{build_root}%{sysroot}%{_includedir}/bits
+	sed '/ifndef.*NO_LONG_DOUBLE/,/#endif/d' < mathdef.h > mathdef.h.new
+	mv mathdef.h.new mathdef.h
+    popd
+    # We also build just enough files to link libgcc.so.  The fake
+    # libc.so will never actually get used.
+    mkdir -p %{build_root}%{sysroot}%{cross_libdir}
+    %make ARCH=%{arch} cross-compiling=yes csu/subdir_lib
+    cp csu/crt*.o %{build_root}%{sysroot}%{cross_libdir}
+    %{target}-gcc -nostdlib -nostartfiles -shared -x c /dev/null -o %{build_root}%{sysroot}%{cross_libdir}/libc.so
 popd
-#--
-rm -fr glibc-2.11-%{version}/build/*
-export CC=%{build_root}%{_bindir}/%{target}-gcc
-pushd glibc-2.11-%{version}/build
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--libdir=%{_prefix}/lib					\
-	--libexecdir=%{_prefix}/lib				\
-	--disable-nls						\
-	--disable-profile					\
-	--enable-shared						\
-	--enable-kernel=2.6.16					\
-	--enable-add-ons					\
-	--without-gd						\
-	--with-headers=%{build_root}%{sysroot}%{_includedir}	\
-	--host=%{target}					\
-	--target=%{target}
-    %make
-    %make install_root=%{build_root}%{sysroot} install
-popd
-unset CC
 
-# gcc(3) build C and C++
-rm -fr gcc-4.5-%{version}/build/*
-pushd gcc-4.5-%{version}/build
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--libdir=%{prefix}/lib					\
-	--libexecdir=%{prefix}/lib				\
-	--disable-nls						\
-	--disable-libffi					\
-	--disable-libgcj					\
-	--disable-libgomp					\
-	--disable-libmudflap					\
-	--disable-libssp					\
-	--disable-libstdcxx-pch					\
-	--disable-libunwind-exceptions				\
-	--disable-plugin					\
-	--enable-__cxa_atexit					\
-	--enable-extra-sgxxlite-multilibs			\
-	--enable-languages="c,c++"				\
-	--enable-lto						\
-	--enable-poison-system-directories			\
-	--enable-shared						\
-	--enable-symvers=gnu					\
-	--enable-threads					\
-	--with-sysroot=%{sysroot}				\
-	--with-build-sysroot=%{build_root}%{sysroot}		\
-	--with-bugurl=https://qa.mandriva.com			\
-	--with-arch=armv5te					\
-	--with-system-zlib					\
-	--with-gnu-as						\
-	--with-gnu-ld						\
-	--without-headers					\
-	--target=%{target}
-    %make LDFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
-	CPPFLAGS_FOR_TARGET=--sysroot=%{build_root}%{sysroot}	\
-	build_tooldir=%{build_root}%{sysroot}
+# gcc libgcc
+pushd %{cross_gcc}/build
+    %make all-target-libgcc
+    DESTDIR=%{build_root} %make install-target-libgcc
+popd
+
+# glibc
+pushd %{cross_glibc}/build
+    %make ARCH=%{arch} cross-compiling=yes
+    %make ARCH=%{arch} cross-compiling=yes install install_root=%{build_root}%{sysroot}
+    pushd %{build_root}%{sysroot}%{_includedir}/bits
+	sed '/ifndef.*NO_LONG_DOUBLE/,/#endif/d' < mathdef.h > mathdef.h.new
+	mv mathdef.h.new mathdef.h
+    popd
+popd
+
+# gcc
+pushd %{cross_gcc}/build
+    %make
     DESTDIR=%{build_root} %make install
     mv -f %{build_root}%{gccdir}/include-fixed/*.h		\
 	  %{build_root}%{gccdir}/include
@@ -550,71 +347,39 @@ pushd gcc-4.5-%{version}/build
 popd
 
 # gdb
-rm -fr gdb-%{version}/build/*
-pushd gdb-%{version}/build
-    ../configure						\
-	--prefix=%{_prefix}					\
+pushd %{cross_gdb}
+    %cross_configure						\
+	%{build_config}						\
 	--disable-nls						\
 	--disable-sim						\
 	--with-bugurl=https://qa.mandriva.com			\
 	--with-build-time-tools=%{build_root}%{sysroot}/bin	\
 	--with-gdb-datadir=%{prefix}/share/gdb			\
-	--with-system-gdbinit=%{prefix}/lib/gdbinit		\
+	--with-system-gdbinit=%{libdir}/gdbinit			\
 	--target=%{target}
     %make
     DESTDIR=%{build_root} %make install
 popd
 
 # gdbserver
-mkdir -p gdb-%{version}/gdb/gdbserver/build-armv4t
-rm -fr gdb-%{version}/gdb/gdbserver/build-armv4t/*
-export CC="%{build_root}%{_bindir}/%{target}-gcc -march=armv4t"
-pushd gdb-%{version}/gdb/gdbserver/build-armv4t
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--with-bugurl=https://qa.mandriva.com			\
-	--host=%{target}
-    %make
-    DESTDIR=%{build_root}%{sysroot}/armv4t %make install
-popd
-#--
-mkdir -p gdb-%{version}/gdb/gdbserver/build-thumb2
-rm -fr gdb-%{version}/gdb/gdbserver/build-thumb2/*
-export CC="%{build_root}%{_bindir}/%{target}-gcc -mthumb -march=armv7-a"
-pushd gdb-%{version}/gdb/gdbserver/build-thumb2
-    ../configure						\
-	--prefix=%{_prefix}					\
-	--with-bugurl=https://qa.mandriva.com			\
-	--host=%{target}
-    %make
-    DESTDIR=%{build_root}%{sysroot}/thumb2 %make install
-popd
-#--
-mkdir -p gdb-%{version}/gdb/gdbserver/build
-rm -fr gdb-%{version}/gdb/gdbserver/build/*
-export CC="%{build_root}%{_bindir}/%{target}-gcc"
-pushd gdb-%{version}/gdb/gdbserver/build
-    ../configure						\
-	--prefix=%{_prefix}					\
+pushd %{cross_gdb}/gdb/gdbserver
+    %cross_configure						\
+	%{build_config}						\
 	--with-bugurl=https://qa.mandriva.com			\
 	--host=%{target}
     %make
     DESTDIR=%{build_root}%{sysroot} %make install
 popd
-unset CC
 
 #-----------------------------------------------------------------------
 %install
 cp -fpar %{build_root}/* %{buildroot}
 
-# already on system tools
 rm -f %{buildroot}%{_libdir}/libiberty.a
 rm -f %{buildroot}%{prefix}/lib*/libiberty.a
-rm -fr %{buildroot}%{_infodir}
-rm -fr %{buildroot}%{_mandir}/man7
-
-rm -f %{buildroot}%{_mandir}/man1/gdbserver.1*
-
+mv %{buildroot}%{_datadir}/gcc-%{gcc_version} %{buildroot}%{sysroot}%{_datadir}
+rm -fr %{buildroot}%{_datadir}
+rm -fr %{buildroot}%{_includedir}
 rm -f %{buildroot}%{_bindir}/%{target}-c++
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{_bindir}/%{target}-c++
 rm -f %{buildroot}%{sysroot}/bin/{c++,g++,gcc}
@@ -622,32 +387,14 @@ ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/c++
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/g++
 ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/bin/gcc
 
-rm -fr %{buildroot}%{sysroot}/armv4t%{_includedir}
-ln -sf %{sysroot}%{_includedir} %{buildroot}%{sysroot}/armv4t%{_includedir}
-rm -fr %{buildroot}%{sysroot}/thumb2%{_includedir}
-ln -sf %{sysroot}%{_includedir} %{buildroot}%{sysroot}/thumb2%{_includedir}
+mkdir -p %{buildroot}%{sysroot}%{_datadir}/gdb/auto-load%{cross_libdir}
+mv -f %{buildroot}%{prefix}/lib/libstdc++.so.*.py		\
+	%{buildroot}%{sysroot}%{_datadir}/gdb/auto-load%{cross_libdir}
+perl -pi -e 's|%%{_datadir}/gcc-%{gcc_version}/python|%{py_puresitedir}|;' \
+    %{buildroot}%{_datadir}/gdb/auto-load%{cross_libdir}/libstdc++.*.py
 
-# move/copy gcc/g++ files
-cp -fpar %{buildroot}%{prefix}/share/gcc-4.5.1 %{buildroot}%{sysroot}/armv4t%{_datadir}
-cp -fpar %{buildroot}%{prefix}/share/gcc-4.5.1 %{buildroot}%{sysroot}/thumb2%{_datadir}
-mv %{buildroot}%{prefix}/share/gcc-4.5.1 %{buildroot}%{sysroot}%{_datadir}
 pushd %{buildroot}%{prefix}/lib
-    mv -f libgcc* libstdc* libsupc* %{buildroot}%{sysroot}%{_prefix}/lib
-    mv -f armv4t/* %{buildroot}%{sysroot}/armv4t%{_prefix}/lib
-    mv -f thumb2/* %{buildroot}%{sysroot}/thumb2%{_prefix}/lib
-    rmdir armv4t thumb2
+    mv -f libgcc* libgomp* libmudf* libstdc* libsupc* %{buildroot}%{sysroot}%{cross_libdir}
 popd
-
-%if 0
-chmod 4755 %{buildroot}{,/armv4t,/thumb2}%{sysroot}%{_prefix}/pt_chown
-%else
-rm -f %{buildroot}{,/armv4t,/thumb2}%{sysroot}%{_prefix}/pt_chown
-%endif
-
-# maybe should actually not install these
 perl -pi -e 's|libdir=/usr/%{_target}/lib|libdir=/usr/lib|;'	\
 	%{buildroot}%{sysroot}%{_prefix}/lib/*.la
-
-#-----------------------------------------------------------------------
-%clean
-rm -fr %{buildroot}
