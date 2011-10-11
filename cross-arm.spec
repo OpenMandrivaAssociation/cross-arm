@@ -454,9 +454,6 @@ Requires:	cross-%{arch}-host = %{EVRD}
 unset CC CXX CFLAGS CXXFLAGS AR LD AS
 export PATH=%{build_root}%{_bindir}:$PATH
 
-mkdir -p %{cross_glibc}/build
-mkdir -p %{cross_gcc}/build
-
 #-----------------------------------------------------------------------
 # host cross-tools
 
@@ -493,7 +490,7 @@ mkdir -p %{cross_gcc}/build; pushd %{cross_gcc}/build
 popd
 
 # glibc headers
-pushd %{cross_glibc}/build
+mkdir -p %{cross_glibc}/build; pushd %{cross_glibc}/build
     echo libc_cv_forced_unwind=yes > config.cache
     echo libc_cv_c_cleanup=yes >> config.cache
     echo libc_cv_ctors_header=no >> config.cache
@@ -691,7 +688,7 @@ popd
 
 # bash
 pushd %{cross_bash}
-	cat <<EOF > config.cache
+    cat <<EOF > config.cache
 bash_cv_func_ctype_nonascii=yes
 bash_cv_opendir_not_robust=no
 bash_cv_ulimit_maxfds=yes
@@ -714,6 +711,7 @@ EOF
     popd
 popd
 
+# make
 pushd %{cross_make}
     %cross_configure						\
 	%{build_config}						\
@@ -722,6 +720,7 @@ pushd %{cross_make}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# sed
 pushd %{cross_sed}
     %cross_configure						\
 	%{build_config}						\
@@ -735,6 +734,7 @@ pushd %{cross_sed}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# coreutils
 pushd %{cross_coreutils}
     %cross_configure						\
 	%{build_config}						\
@@ -748,6 +748,7 @@ pushd %{cross_coreutils}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# util-linux
 patch -l -p1 < %{PATCH2}
 pushd %{cross_util_linux}
     %cross_configure						\
@@ -759,6 +760,7 @@ pushd %{cross_util_linux}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# tar
 pushd %{cross_tar}
     %cross_configure						\
 	%{build_config}						\
@@ -768,6 +770,7 @@ pushd %{cross_tar}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# gzip
 pushd %{cross_gzip}
     %cross_configure						\
 	%{build_config}						\
@@ -776,6 +779,7 @@ pushd %{cross_gzip}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# bzip2
 pushd %{cross_bzip2}
     %make							\
 	CC=%{target}-gcc					\
@@ -800,6 +804,7 @@ pushd %{cross_bzip2}
     popd
 popd
 
+# diffutils
 pushd %{cross_diffutils}
     %cross_configure						\
 	%{build_config}						\
@@ -808,6 +813,7 @@ pushd %{cross_diffutils}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# findutils
 pushd %{cross_findutils}
     %cross_configure						\
 	%{build_config}						\
@@ -816,6 +822,7 @@ pushd %{cross_findutils}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# gawk
 pushd %{cross_gawk}
     %cross_configure						\
 	%{build_config}						\
@@ -824,6 +831,7 @@ pushd %{cross_gawk}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# patch
 pushd %{cross_patch}
     cat <<EOF > config.cache
 ac_cv_func_strnlen_working=yes
@@ -836,6 +844,7 @@ EOF
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# unzip
 pushd %{cross_unzip}
     %make -f unix/Makefile					\
 	CC=%{target}-gcc					\
@@ -855,6 +864,7 @@ pushd %{cross_unzip}
 	install 
 popd
 
+# which
 pushd %{cross_which}
     %cross_configure						\
 	%{build_config}						\
@@ -863,6 +873,7 @@ pushd %{cross_which}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# xz
 pushd %{cross_xz}
     %cross_configure						\
 	%{build_config}						\
@@ -871,6 +882,7 @@ pushd %{cross_xz}
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
+# grep
 pushd %{cross_grep}
     %cross_configure						\
 	%{build_config}						\
