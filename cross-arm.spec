@@ -226,7 +226,8 @@ Source25:	%{cross_xz}.tar.bz2
 # cd BUILD; tar jcf %{cross_grep}.tar.bz2 %{cross_grep}; mv %{cross_grep}.tar.bz2 ../../cross-arm/SOURCES
 Source26:	%{cross_grep}.tar.bz2
 
-Source99:	stage2.tar.bz2
+Source98:	stage2.tar.bz2
+Source99:	README
 Source100:	find-nothing
 
 Buildroot:	%{_tmppath}/%{name}-%{version}-root
@@ -401,7 +402,7 @@ fi
 
 %postun		host
 if [ $1 -eq 0 ]; then
-    rmdir %{sysroot}/tmp
+    rmdir %{sysroot}/tmp 2> /dev/null || :
     if [ -d %{sysroot}/dev ]; then
 	pushd %{sysroot}/dev
 	    rm -f null zero random urrandom tty console		\
@@ -509,7 +510,6 @@ mkdir -p %{cross_glibc}/build; pushd %{cross_glibc}/build
 	--with-headers=%{build_root}%{sysroot}%{_includedir}	\
 	--enable-kernel=2.6.32					\
 	--enable-bind-now					\
-	--host %{target}					\
 	--disable-profile					\
 	--cache-file=config.cache				\
 	--without-cvs						\
@@ -937,7 +937,7 @@ find %{buildroot}%{sysroot}%{_includedir}			\
     -name .install -o -name ..install.cmd | xargs rm -f
 
 %if %{build_bootstrap}
-tar jxf %{SOURCE99} -C %{buildroot}%{sysroot}
+tar jxf %{SOURCE98} -C %{buildroot}%{sysroot}
 (
     echo TARGET=%{target}
     echo RPMTARGET=%{target}
@@ -948,4 +948,6 @@ tar jxf %{SOURCE99} -C %{buildroot}%{sysroot}
 ) > %{buildroot}%{sysroot}/stage2/local.conf
 mkdir -p %{buildroot}%{sysroot}/stage2/rpmbuild
 mkdir -p %{buildroot}%{sysroot}/stage2/builds
+
+cp %{SOURCE99} %{buildroot}%{sysroot}/stage2
 %endif
