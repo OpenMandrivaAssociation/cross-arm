@@ -226,6 +226,7 @@ Source25:	%{cross_xz}.tar.bz2
 # cd BUILD; tar jcf %{cross_grep}.tar.bz2 %{cross_grep}; mv %{cross_grep}.tar.bz2 ../../cross-arm/SOURCES
 Source26:	%{cross_grep}.tar.bz2
 
+Source99:	stage2.tar.bz2
 Source100:	find-nothing
 
 Buildroot:	%{_tmppath}/%{name}-%{version}-root
@@ -425,6 +426,7 @@ Provides:	cross-%{arch}-host = %{EVRD}
 %if %{build_bootstrap}
 %{sysroot}%{prefix}
 %{sysroot}/bin
+%{sysroot}/stage2
 %endif
 
 ########################################################################
@@ -626,6 +628,7 @@ pushd %{cross_ppl}
 	--host=%{target}					\
 	--enable-shared						\
 	--enable-interfaces="c++ c"				\
+	 --with-gmp-prefix=%{build_root}%{sysroot}%{_prefix}	\
 	%{target_config}
     %make
     %make install DESTDIR=%{build_root}%{sysroot}
@@ -916,11 +919,25 @@ ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/c++
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/g++
 ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/bin/gcc
 
-mkdir -p %{buildroot}%{sysroot}%{_datadir}/gdb/auto-load%{cross_libdir}
+mkdir -p %{buildroot}%{prefix}/share/gdb/auto-load%{cross_libdir}
 mv -f %{buildroot}%{sysroot}%{cross_libdir}/libstdc++.so.*.py		\
-	%{buildroot}%{sysroot}%{_datadir}/gdb/auto-load%{cross_libdir}
+	%{buildroot}%{prefix}/share/gdb/auto-load%{cross_libdir}
 perl -pi -e 's|%%{_datadir}/gcc-%{gcc_version}/python|%{py_puresitedir}|;' \
-    %{buildroot}%{_datadir}/gdb/auto-load%{cross_libdir}/libstdc++.*.py
+    %{buildroot}%{prefix}/share/gdb/auto-load%{cross_libdir}/libstdc++.*.py
 
 find %{buildroot}%{sysroot}%{_includedir}			\
     -name .install -o -name ..install.cmd | xargs rm -f
+
+%if %{build_bootstrap}
+tar jxf %{SOURCE99} -C %{buildroot}%{sysroot}
+(
+    echo TARGET=%{target}
+    echo RPMTARGET=%{target}
+    echo TCONFIGARGS=\"--prefix=/usr --disable-werror %{host_config} \"	\
+	| sed 's/--build=[^ ]*//'					\
+	| sed 's/--host=[^ ]*//'					\
+	| sed 's/--target=[^ ]*//'
+) > %{buildroot}%{sysroot}/stage2/local.conf
+mkdir -p %{buildroot}%{sysroot}/stage2/rpmbuild
+mkdir -p %{buildroot}%{sysroot}/stage2/builds
+%endif
