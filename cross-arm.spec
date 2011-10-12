@@ -363,7 +363,7 @@ Requires:	cross-%{arch}-gcc = %{EVRD}
 %package	host
 Summary:	ARM GNU/Linux cross toolchain host
 Requires:	cross-%{arch}-gcc = %{EVRD}
-Provides:	cross-%{arch}-host = %{EVRD}
+Provides:	cross-%{arch}-glibc = %{EVRD}
 
 %description	host
 %{summary}.
@@ -684,7 +684,7 @@ mkdir -p %{cross_gcc}/build; pushd %{cross_gcc}/build
 	--disable-libssp					\
 	%{host_config}
     %make
-    DESTDIR=%{build_root}%{sysroot} %make install
+    %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
 # bash
@@ -717,7 +717,7 @@ pushd %{cross_make}
     %cross_configure						\
 	%{build_config}						\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -745,7 +745,7 @@ pushd %{cross_coreutils}
 	base=`echo $i | sed 's/\.x//'`
 	touch man/$base.1
     done
-    %make CFLAGS="$CFLAGS -fpic -fPIC" V=1
+    %make CFLAGS="$CFLAGS -fpic -fPIC"
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -767,7 +767,7 @@ pushd %{cross_tar}
 	%{build_config}						\
 	%{host_config}						\
 	--bindir=/bin
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -776,7 +776,7 @@ pushd %{cross_gzip}
     %cross_configure						\
 	%{build_config}						\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -810,7 +810,7 @@ pushd %{cross_diffutils}
     %cross_configure						\
 	%{build_config}						\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -819,7 +819,7 @@ pushd %{cross_findutils}
     %cross_configure						\
 	%{build_config}						\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -828,7 +828,7 @@ pushd %{cross_gawk}
     %cross_configure						\
 	%{build_config}						\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -841,7 +841,7 @@ EOF
 	%{build_config}						\
 	--cache-file=config.cache				\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -870,7 +870,7 @@ pushd %{cross_which}
     %cross_configure						\
 	%{build_config}						\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -879,7 +879,7 @@ pushd %{cross_xz}
     %cross_configure						\
 	%{build_config}						\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
@@ -888,7 +888,7 @@ pushd %{cross_grep}
     %cross_configure						\
 	%{build_config}						\
 	%{host_config}
-    %make V=1
+    %make
     %make install DESTDIR=%{build_root}%{sysroot}
 popd
 
