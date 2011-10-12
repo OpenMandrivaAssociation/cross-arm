@@ -897,6 +897,9 @@ popd
 
 ########################################################################
 %install
+# needed by rpm 4.x
+mkdir -p %{buildroot}
+
 cp -fpar %{build_root}/* %{buildroot}
 
 # binutils
