@@ -368,8 +368,11 @@ Provides:	cross-%{arch}-host = %{EVRD}
 %{summary}.
 
 %post		host
+if [ ! -d %{sysroot}/tmp ]; then
     mkdir -p %{sysroot}/tmp
     chmod 1777 %{sysroot}/tmp
+fi
+if [ ! -d %{sysroot}/dev ]; then
     mkdir -p %{sysroot}/dev
     pushd %{sysroot}/dev
 	mknod null	c   1 3
@@ -394,16 +397,21 @@ Provides:	cross-%{arch}-host = %{EVRD}
 	mknod ttyO3	c 253 3
 	chmod a+rw null zero
     popd
+fi
 
-%preun		host
+%postun		host
+if [ $1 -eq 0 ]; then
     rmdir %{sysroot}/tmp
-    pushd %{sysroot}/dev
-	rm -f null zero random urrandom tty console		\
-	    sda sda1 sda2 sda3 sda4				\
-	    mmcblk0 mmcblk0p1 mmcblk0p2 mmcblk0p3 mmcblk0p4	\
-	    tty00 tty01 tty02 tty03
-    popd
+    if [ -d %{sysroot}/dev ]; then
+	pushd %{sysroot}/dev
+	    rm -f null zero random urrandom tty console		\
+		sda sda1 sda2 sda3 sda4				\
+		mmcblk0 mmcblk0p1 mmcblk0p2 mmcblk0p3 mmcblk0p4	\
+		tty00 tty01 tty02 tty03
+	popd
+    fi
     rmdir %{sysroot}/dev
+fi
 
 %files		host
 %defattr(-,root,root,-)
