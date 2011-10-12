@@ -405,13 +405,13 @@ if [ $1 -eq 0 ]; then
     rmdir %{sysroot}/tmp 2> /dev/null || :
     if [ -d %{sysroot}/dev ]; then
 	pushd %{sysroot}/dev
-	    rm -f null zero random urrandom tty console		\
+	    rm -f null zero random urandom tty console		\
 		sda sda1 sda2 sda3 sda4				\
 		mmcblk0 mmcblk0p1 mmcblk0p2 mmcblk0p3 mmcblk0p4	\
-		tty00 tty01 tty02 tty03
+		ttyO0 ttyO1 ttyO2 ttyO3
 	popd
+	rmdir %{sysroot}/dev 2> /dev/null || :
     fi
-    rmdir %{sysroot}/dev
 fi
 
 %files		host
