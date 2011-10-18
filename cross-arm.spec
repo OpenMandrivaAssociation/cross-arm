@@ -56,7 +56,7 @@
 %define		gccdir			%{prefix}/lib/gcc/%{target}/%{gcc_version}
 
 Name:		cross-arm
-Release:	2
+Release:	3
 Version:	2011.10
 License:	GPLv3+
 Group:		Development/Other
@@ -919,6 +919,8 @@ rm -f %{buildroot}%{sysroot}/bin/{c++,g++,gcc}
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/c++
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/g++
 ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/bin/gcc
+ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/bin/cc
+ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/lib/cpp
 
 mkdir -p %{buildroot}%{prefix}/share/gdb/auto-load%{cross_libdir}
 mv -f %{buildroot}%{sysroot}%{cross_libdir}/libstdc++.so.*.py		\
