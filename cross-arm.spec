@@ -919,8 +919,8 @@ rm -f %{buildroot}%{sysroot}/bin/{c++,g++,gcc}
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/c++
 ln -sf %{_bindir}/%{target}-g++ %{buildroot}%{prefix}/bin/g++
 ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{prefix}/bin/gcc
-ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{sysroot}%{_bindir}/cc
-ln -sf %{_bindir}/%{target}-gcc %{buildroot}%{sysroot}/lib/cpp
+ln -sf %{_bindir}/gcc %{buildroot}%{sysroot}%{_bindir}/cc
+ln -sf %{_bindir}/cpp %{buildroot}%{sysroot}/lib/cpp
 
 mkdir -p %{buildroot}%{prefix}/share/gdb/auto-load%{cross_libdir}
 mv -f %{buildroot}%{sysroot}%{cross_libdir}/libstdc++.so.*.py		\
