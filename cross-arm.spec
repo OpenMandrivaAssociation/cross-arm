@@ -561,7 +561,7 @@ pushd %{cross_gdb}
 	--with-bugurl=https://qa.mandriva.com			\
 	--with-build-time-tools=%{build_root}%{sysroot}/bin	\
 	--with-gdb-datadir=%{prefix}/share/gdb			\
-	--with-system-gdbinit=%{libdir}/gdbinit			\
+	--with-system-gdbinit=%{cross_libdir}/gdbinit		\
 	--target=%{target}
     %make
     %make install DESTDIR=%{build_root}
