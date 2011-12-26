@@ -230,8 +230,6 @@ Source98:	stage2.tar.bz2
 Source99:	README
 Source100:	find-nothing
 
-Buildroot:	%{_tmppath}/%{name}-%{version}-root
-
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	binutils-devel
@@ -246,7 +244,6 @@ BuildRequires:	ncurses-devel
 BuildRequires:	readline-devel
 BuildRequires:	gettext
 BuildRequires:	texinfo
-BuildRequires:	texlive
 BuildRequires:	zlib-devel
 
 Requires:	cross-%{arch}-binutils = %{EVRD}
@@ -610,6 +607,7 @@ popd
 
 # mpc
 pushd %{cross_mpc}
+    autoreconf -fi
     %cross_configure						\
 	%{build_config}						\
 	--host=%{target}					\
