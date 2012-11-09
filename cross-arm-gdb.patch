@@ -1,0 +1,17 @@
+diff --git cross-armv7hl/gdb-7.5/a/gdb/gdbserver/server.h cross-armv7hl/gdb-7.5/b/gdb/gdbserver/server.h
+index 02dfa29..47901e8 100644
+--- a/cross-armv7hl/gdb-7.5/gdb/gdbserver/server.h
++++ b/cross-armv7hl/gdb-7.5/gdb/gdbserver/server.h
+@@ -558,4 +558,12 @@ int emit_error;
+ extern const char version[];
+ extern const char host_name[];
+ 
++#ifndef PATH_MAX
++# ifdef FILENAME_MAX
++#  define PATH_MAX FILENAME_MAX
++# else
++#  define PATH_MAX 512
++# endif
++#endif
++
+ #endif /* SERVER_H */

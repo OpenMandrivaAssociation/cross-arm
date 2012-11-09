@@ -1,0 +1,12 @@
+--- cross-armv7hl/util-linux-2.21.2/text-utils/column.c.orig	2011-10-11 17:40:13.070393391 -0300
++++ cross-armv7hl/util-linux-2.21.2/text-utils/column.c	2011-10-11 17:40:42.011523582 -0300
+@@ -69,6 +69,9 @@ static char *mtsafe_strtok(char *, const
+ #define DEFCOLS     25
+ #define TAB         8
+ #define DEFNUM      1000
++#ifndef LINE_MAX
++#define LINE_MAX	2048
++#endif
+ #define MAXLINELEN  (LINE_MAX + 1)
+ 
+ static int input(FILE *fp, int *maxlength, wchar_t ***list, int *entries);
