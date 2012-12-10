@@ -1,0 +1,161 @@
+Any recent cooker package should work with possibly some minor tweaking
+until having a working rpmbuild, but tested version of stage2 packages are:
+
+	repsys co -r 663400 cpio
+	repsys co -r 662184 ncurses
+	repsys co -r 666353 m4
+	repsys co -r 664312 flex
+	repsys co -r 674775 bison
+	repsys co -r 647042 texinfo
+	repsys co -r 682884 gdb
+	repsys co -r 686821 curl
+	repsys co -r 672998 nspr
+	repsys co -r 661712 pcre
+	repsys co -r 656341 readline
+	repsys co -r 663371 chkconfig
+	repsys co -r 689134 sqlite3
+	repsys co -r 664814 gdbm
+	repsys co -r 661715 pth
+	repsys co -r 676960 libtool
+	repsys co -r 688891 db51
+	repsys co -r 685860 perl
+	repsys co -r 674739 openssl
+	repsys co -r 664824 gettext
+	repsys co -r 667804 popt
+	repsys co -r 682895 glib2.0
+	repsys co -r 676613 pkgconfig
+	repsys co -r 682823 beecrypt
+	repsys co -r 675834 nss
+	repsys co -r 653857 elfutils
+	repsys co -r 669453 rsync
+	repsys co -r 634945 fakechroot
+	repsys co -r 673470 file
+	repsys co -r 434591 ustr
+	repsys co -r 660291 libusb1
+	repsys co -r 661156 timezone
+	repsys co -r 689907 rpm
+	repsys co -r 689988 rpm-mandriva-setup
+	repsys co -r 651378 rpm-manbo-setup
+	repsys co -r 669799 spec-helper
+	repsys co -r 684744 perl-File-Slurp
+	repsys co -r 677371 perl-List-MoreUtils
+	repsys co -r 681745 ccache
+	repsys co -r 663999 cracklib
+	repsys co -r 690602 pam
+	repsys co -r 669975 shadow-utils
+	repsys co -r 645641 strace
+	repsys co -r 690114 util-linux
+
++ Special attention must be taken into rpm-manbo-setup, that does not
+  install files in the BUILD directory, so, ensure to replicate the
+  SOURCES for it in the bootstrap.
+
++ Once rpmbuild is working, one of the first packages to be rebuilt
+  in stage3 should be pcre, and then, after installing it, is is
+  required to go back to stage2 and rebuild rpm again, to avoid
+  issues with utf8 enabled pcre and pcreposix-compat.
+
+Suggested pseudo patches to avoid build failures or problems in start of stage2:
+
+--%<--
+Index: beecrypt/SPECS/beecrypt.spec
+===================================================================
+--- beecrypt/SPECS/beecrypt.spec	(revision 691807)
++++ beecrypt/SPECS/beecrypt.spec	(working copy)
+@@ -134,13 +134,13 @@
+ %patch2 -p1 -b .link
+ %patch3 -p0
+ 
+-%build
+ %if %cvs
+ ./autogen.sh
+ %endif
+ 
+ ./autogen.sh
+ 
++%build
+ export OPENMP_LIBS="-lgomp"
+ 
+ %configure2_5x \
+Index: SPECS/libtool.spec
+===================================================================
+--- libtool/SPECS/libtool.spec	(revision 691689)
++++ libtool/SPECS/libtool.spec	(working copy)
+@@ -148,16 +148,16 @@
+ 
+ %prep
+ %setup -q
+-%patch0 -p1 -b .relink
+-%patch1 -p1 -b .lib64
+-%patch2 -p1 -b .ltmain-SED
+-%patch12 -p1 -b .overlinking
+-%patch13 -p1 -b .underlinking
+-%patch14 -p1
+-%patch16 -p1 -b .gcj-no-cflags
+-%patch17 -p1 -b .ignore-system-libltdl
+-%patch18 -p1 -b .sleepmore
+-%patch19 -p0 -b .define_shlibpath_overrides_runpath
++#%#patch0 -p1 -b .relink
++#%#patch1 -p1 -b .lib64
++#%#patch2 -p1 -b .ltmain-SED
++#%#patch12 -p1 -b .overlinking
++#%#patch13 -p1 -b .underlinking
++#%#patch14 -p1
++#%#patch16 -p1 -b .gcj-no-cflags
++#%#patch17 -p1 -b .ignore-system-libltdl
++#%#patch18 -p1 -b .sleepmore
++#%#patch19 -p0 -b .define_shlibpath_overrides_runpath
+ 
+ %build
+ ./bootstrap
+Index: SPECS/openssl.spec
+===================================================================
+--- openssl/SPECS/openssl.spec	(revision 691689)
++++ openssl/SPECS/openssl.spec	(working copy)
+@@ -133,7 +133,7 @@
+ %patch12 -p1 -b .x509
+ %patch13 -p1 -b .version-add-engines
+ %patch15 -p1 -b .crt
+-%patch16 -p1 -b .pkcs11_engine
++#%#patch16 -p1 -b .pkcs11_engine
+ 
+ %patch300 -p1 -b .mips
+ %patch301 -p1 -b .arm
+Index: SPECS/pkgconfig.spec
+===================================================================
+--- pkgconfig/SPECS/pkgconfig.spec	(revision 691689)
++++ pkgconfig/SPECS/pkgconfig.spec	(working copy)
+@@ -25,7 +25,7 @@
+ 
+ %prep
+ %setup -q -n %{pkgname}-%{version}
+-%patch0 -p1 -b .biarch
++#%#patch0 -p1 -b .biarch
+ 
+ %build
+ autoreconf -fi
+Index: SPECS/shadow-utils.spec
+===================================================================
+--- shadow-utils/SPECS/shadow-utils.spec	(revision 691689)
++++ shadow-utils/SPECS/shadow-utils.spec	(working copy)
+@@ -58,7 +58,7 @@
+ %patch2 -p1 -b .rpmsave
+ %patch4 -p1 -b .dot
+ %patch7 -p1 -b .salt
+-%patch8 -p1 -b .tcb
++#%#patch8 -p1 -b .tcb
+ %patch9 -p1 -b .shadow_perms
+ %patch10 -p0 -b .groupmod
+ 
+Index: SPECS/tar.spec
+--%<--
+
+You should be able to chroot to the mandriva bootstrap after copying
+the files with a command like:
+
+	rsync -a %{sysroot}/ root@armv7:/mandriva-bootstrap/
+
+This package does not build the kernel or any bootloader. See
+http://fedorapeople.org/~djdelorie/
+scripts for x-loader, u-boot and simple kernel build procedures
+for arm.

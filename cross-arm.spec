@@ -10,6 +10,7 @@
 %define		debug_package		%{nil}
 %define		__find_provides		%{SOURCE100}
 %define		__find_requires		%{SOURCE100}
+%define __noautoprov 'libgmp\\.so\\.(.*)'
 
 %define		arch			arm
 %define		target			armv7l-mandriva-linux-gnueabi
@@ -57,7 +58,7 @@
 %define		gccdir			%{prefix}/lib/gcc/%{target}/%{gcc_version}
 
 Name:		cross-arm
-Release:	1
+Release:	2
 Version:	2012.08
 License:	GPLv3+
 Group:		Development/Other
@@ -246,6 +247,8 @@ BuildRequires:	readline-devel
 BuildRequires:	gettext
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
+BuildRequires:	diffutils
+BuildRequires:	tcsh
 
 Requires:	cross-%{arch}-binutils = %{EVRD}
 Requires:	cross-%{arch}-gcc = %{EVRD}
