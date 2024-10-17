@@ -63,7 +63,7 @@ Version:	2012.08
 License:	GPLv3+
 Group:		Development/Other
 Summary:	ARM GNU/Linux cross toolchain
-URL:		http://fedorapeople.org/~djdelorie/
+URL:		https://fedorapeople.org/~djdelorie/
 
 # revision: 677434
 # repsys co kernel; cd kernel; ./build_sources
